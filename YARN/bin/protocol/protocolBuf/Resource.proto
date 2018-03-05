@@ -1,0 +1,6 @@
+package protocol.protocolBuf;
+option java_outer_classname="ResourceProtos";  
+message Resource{
+	required int32 memory = 1;
+	required int32 vCores = 2;
+}

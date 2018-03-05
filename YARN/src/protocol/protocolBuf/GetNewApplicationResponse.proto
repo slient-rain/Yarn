@@ -1,0 +1,8 @@
+package protocol.protocolBuf;
+option java_outer_classname="GetNewApplicationResoponseProtos";  
+import "ApplicationId.proto";
+import "Resource.proto";
+message GetNewApplicationResponse{      
+    required ApplicationId applicationId =1;
+    required Resource maximumResourceCapability=2;
+}  

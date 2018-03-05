@@ -1,0 +1,134 @@
+/**
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
+package resourceManager.applicationMasterLauncher;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+
+import dispatcher.core.EventHandler;
+
+import resourceManager.RMContext;
+import resourceManager.scheduler.Allocation;
+import service.AbstractService;
+
+
+
+/**
+ * 将所有的ApplicationAttemp 换成了Allocation
+ * @author 无言的雨
+ *
+ */
+public class ApplicationMasterLauncher extends AbstractService implements
+    EventHandler<AMLauncherEvent> {
+  private static final Logger LOG = LoggerFactory.getLogger(ApplicationMasterLauncher.class);
+  private final ThreadPoolExecutor launcherPool;
+  private LauncherThread launcherHandlingThread;
+  
+  private final BlockingQueue<Runnable> masterEvents
+    = new LinkedBlockingQueue<Runnable>();
+  
+  protected final RMContext context;
+  
+  public ApplicationMasterLauncher(RMContext context) {
+    super(ApplicationMasterLauncher.class.getName());
+    this.context = context;
+    this.launcherPool = new ThreadPoolExecutor(10, 10, 1, 
+        TimeUnit.HOURS, new LinkedBlockingQueue<Runnable>());
+    this.launcherHandlingThread = new LauncherThread();
+  }
+  
+  @Override
+  protected void serviceStart() throws Exception {
+    launcherHandlingThread.start();
+    super.serviceStart();
+  }
+  
+  protected Runnable createRunnableLauncher(Allocation allocation, 
+      AMLauncherEventType event) {
+    Runnable launcher =
+        new AMLauncher(context, allocation, event
+//        		, getConfig()
+        		);
+    return launcher;
+  }
+  
+  private void launch(Allocation allocation) {
+    Runnable launcher = createRunnableLauncher(allocation, 
+        AMLauncherEventType.LAUNCH);
+    masterEvents.add(launcher);
+  }
+  
+
+  @Override
+  protected void serviceStop() throws Exception {
+    launcherHandlingThread.interrupt();
+    try {
+      launcherHandlingThread.join();
+    } catch (InterruptedException ie) {
+      LOG.info(launcherHandlingThread.getName() + " interrupted during join ", 
+          ie);    }
+    launcherPool.shutdown();
+  }
+
+  private class LauncherThread extends Thread {
+    
+    public LauncherThread() {
+      super("ApplicationMaster Launcher");
+    }
+
+    @Override
+    public void run() {
+      while (!this.isInterrupted()) {
+        Runnable toLaunch;
+        try {
+          toLaunch = masterEvents.take();
+          launcherPool.execute(toLaunch);
+        } catch (InterruptedException e) {
+          LOG.warn(this.getClass().getName() + " interrupted. Returning.");
+          return;
+        }
+      }
+    }
+  }    
+
+  private void cleanup(Allocation allocation) {
+    Runnable launcher = createRunnableLauncher(allocation, AMLauncherEventType.CLEANUP);
+    masterEvents.add(launcher);
+  } 
+  
+  @Override
+  public synchronized void  handle(AMLauncherEvent appEvent) {
+    AMLauncherEventType event = appEvent.getType();
+    Allocation allocation = appEvent.getAllocation();
+    switch (event) {
+    case LAUNCH:
+      launch(allocation);
+      break;
+    case CLEANUP:
+      cleanup(allocation);
+    default:
+      break;
+    }
+  }
+}

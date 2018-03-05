@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="/Users/zhenglijiu/project/jar_package/httpcomponents-client-4.5.1/lib/commons-codec-1.9.jar"/>
+	<classpathentry kind="lib" path="/Users/zhenglijiu/project/jar_package/httpcomponents-client-4.5.1/lib/commons-logging-1.2.jar"/>
+	<classpathentry kind="lib" path="/Users/zhenglijiu/project/jar_package/httpcomponents-client-4.5.1/lib/fluent-hc-4.5.1.jar"/>
+	<classpathentry kind="lib" path="/Users/zhenglijiu/project/jar_package/httpcomponents-client-4.5.1/lib/httpclient-4.5.1.jar"/>
+	<classpathentry kind="lib" path="/Users/zhenglijiu/project/jar_package/httpcomponents-client-4.5.1/lib/httpclient-cache-4.5.1.jar"/>
+	<classpathentry kind="lib" path="/Users/zhenglijiu/project/jar_package/httpcomponents-client-4.5.1/lib/httpcore-4.4.3.jar"/>
+	<classpathentry kind="lib" path="/Users/zhenglijiu/project/jar_package/httpcomponents-client-4.5.1/lib/httpmime-4.5.1.jar"/>
+	<classpathentry kind="lib" path="/Users/zhenglijiu/project/jar_package/logback-1.2.3/logback-access-1.2.3.jar"/>
+	<classpathentry kind="lib" path="/Users/zhenglijiu/project/jar_package/logback-1.2.3/logback-classic-1.2.3.jar"/>
+	<classpathentry kind="lib" path="/Users/zhenglijiu/project/jar_package/logback-1.2.3/logback-core-1.2.3.jar"/>
+	<classpathentry kind="lib" path="/Users/zhenglijiu/project/jar_package/protocolbuf/protobuf-java-2.5.0.jar"/>
+	<classpathentry kind="lib" path="/Users/zhenglijiu/project/jar_package/slf4j-1.7.25/slf4j-api-1.7.25.jar"/>
+	<classpathentry kind="lib" path="/Users/zhenglijiu/project/jar_package/self write jar/service.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

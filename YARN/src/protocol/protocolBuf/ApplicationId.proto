@@ -1,0 +1,7 @@
+package protocol.protocolBuf;
+option java_outer_classname="ApplicationIdProtos";  
+message ApplicationId{
+	required string appIdStrPrefix = 1;
+	required int32 id = 2;
+	required int64 clusterTimestamp=3;
+}
