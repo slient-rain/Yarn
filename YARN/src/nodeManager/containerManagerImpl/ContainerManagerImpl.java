@@ -70,8 +70,8 @@ public class ContainerManagerImpl extends CompositeService implements
 				dispatcher);
 		containersLauncher = createContainersLauncher(context, exec);
 		addService(containersLauncher);
-		dispatcher.register(ContainerEventType.class,
-				new ContainerEventDispatcher());
+//		dispatcher.register(ContainerEventType.class,
+//				new ContainerEventDispatcher());
 		dispatcher.register(LocalizerEventType.class,
 				resourceLocalizationService);
 		dispatcher.register(ContainersLauncherEventType.class,
@@ -123,9 +123,9 @@ public class ContainerManagerImpl extends CompositeService implements
 	@Override
 	public StartContainersResponse startContainers(
 			StartContainersRequest requests) {
-		System.out.println("NodeManagerService.StartContainersResponse():"
-				+ requests.getRequests().get(0).toString());
 		for (StartContainerRequest request : requests.getRequests()) {
+			LOG.debug("util check: StartContainersResponse request:"
+					+ request.toString());
 			ContainerId containerId = null;
 			startContainerInternal(
 			request);
@@ -180,6 +180,7 @@ public class ContainerManagerImpl extends CompositeService implements
 				/**
 				 * 自己加的
 				 */
+				dispatcher.register(ContainerEventType.class, container);
 				application.getContainers().put(containerId, container);
 				dispatcher.getEventHandler().handle(
 						new ContainerEvent(containerId,

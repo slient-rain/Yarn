@@ -4,6 +4,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import client.test.Main;
+
 import com.sun.org.apache.regexp.internal.recompile;
 
 import resourceManager.RMContext;
@@ -17,6 +22,7 @@ import resourceManager.scheduler.Resource;
 import resourceManager.scheduler.ResourceRequest;
 
 public class AppMaster implements  Runnable{
+	private static final Logger LOG = LoggerFactory.getLogger(AppMaster.class);
 	RMContext rmContext;
 	boolean isStopped=false;
 	ApplicationAttemptId applicationAttemptId;
@@ -44,7 +50,7 @@ public class AppMaster implements  Runnable{
 			}				
 			try {
 				synchronized (lock) {				
-					System.out.println("appmaster 未获取到资源，重新心跳请求");
+					LOG.info("appmaster 未获取到资源，重新进行allocate资源请求");
 					lock.wait(DEFAULTHEARTBEATINTERVAL);
 				}
 			} catch (InterruptedException e) {

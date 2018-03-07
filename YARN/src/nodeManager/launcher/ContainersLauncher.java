@@ -108,6 +108,8 @@ implements EventHandler<ContainersLauncherEvent> {
 		// TODO: ContainersLauncher launches containers one by one!!
 		Container container = event.getContainer();
 		ContainerId containerId = container.getContainerId();
+		LOG.debug("Processing " + containerId + " of type "
+				+ event.getType());
 		switch (event.getType()) {
 		case LAUNCH_CONTAINER:
 			Application app =context.getApplications().get(
@@ -133,15 +135,6 @@ implements EventHandler<ContainersLauncherEvent> {
 				// Container not launched. So nothing needs to be done.
 				return;
 			}
-
-			// Cleanup a container whether it is running/killed/completed, so that
-			// no sub-processes are alive.
-//			try {
-////				launcher.cleanupContainer();
-//			} catch (IOException e) {
-//				LOG.warn("Got exception while cleaning container " + containerId
-//						+ ". Ignoring.");
-//			}
 			break;
 		}
 	}

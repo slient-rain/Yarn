@@ -27,8 +27,6 @@ public class RMStateStore {
 	}
 
 	public void storeApplication(RMAppImpl app){
-		System.out.println("in RMState : storeApplication()");
-		
 		ApplicationSubmissionContext context = app
                 .getApplicationSubmissionContext();
 		assert context instanceof ApplicationSubmissionContext;

@@ -208,41 +208,42 @@ abstract public class Shell {
 			 **/
 			private static String checkHadoopHome() {
 
-				// first check the Dflag hadoop.home.dir with JVM scope
-				String home = System.getProperty("hadoop.home.dir");
-
-				// fall back to the system/user-global env variable
-				if (home == null) {
-					home = System.getenv("HADOOP_HOME");
-				}
-
-				try {
-					// couldn't find either setting for hadoop's home directory
-					if (home == null) {
-						throw new IOException("HADOOP_HOME or hadoop.home.dir are not set.");
-					}
-
-					if (home.startsWith("\"") && home.endsWith("\"")) {
-						home = home.substring(1, home.length()-1);
-					}
-
-					// check that the home setting is actually a directory that exists
-					File homedir = new File(home);
-					if (!homedir.isAbsolute() || !homedir.exists() || !homedir.isDirectory()) {
-						throw new IOException("Hadoop home directory " + homedir
-								+ " does not exist, is not a directory, or is not an absolute path.");
-					}
-
-					home = homedir.getCanonicalPath();
-
-				} catch (IOException ioe) {
-					if (LOG.isDebugEnabled()) {
-						LOG.debug("Failed to detect a valid hadoop home directory", ioe);
-					}
-					home = null;
-				}
-
-				return home;
+//				// first check the Dflag hadoop.home.dir with JVM scope
+//				String home = System.getProperty("hadoop.home.dir");
+//
+//				// fall back to the system/user-global env variable
+//				if (home == null) {
+//					home = System.getenv("HADOOP_HOME");
+//				}
+//
+//				try {
+//					// couldn't find either setting for hadoop's home directory
+//					if (home == null) {
+//						throw new IOException("HADOOP_HOME or hadoop.home.dir are not set.");
+//					}
+//
+//					if (home.startsWith("\"") && home.endsWith("\"")) {
+//						home = home.substring(1, home.length()-1);
+//					}
+//
+//					// check that the home setting is actually a directory that exists
+//					File homedir = new File(home);
+//					if (!homedir.isAbsolute() || !homedir.exists() || !homedir.isDirectory()) {
+//						throw new IOException("Hadoop home directory " + homedir
+//								+ " does not exist, is not a directory, or is not an absolute path.");
+//					}
+//
+//					home = homedir.getCanonicalPath();
+//
+//				} catch (IOException ioe) {
+//					if (LOG.isDebugEnabled()) {
+//						LOG.debug("Failed to detect a valid hadoop home directory", ioe);
+//					}
+//					home = null;
+//				}
+//
+//				return home;
+				return null;
 			}
 			private static String HADOOP_HOME_DIR = checkHadoopHome();
 

@@ -136,17 +136,9 @@ public class ClientRMService extends AbstractService implements
 			// RMAuditLogger.logSuccess(user, AuditConstants.SUBMIT_APP_REQUEST,
 			// "ClientRMService", applicationId);
 		} catch (Exception e) {
-			// LOG.info("Exception in submitting application with id " +
-			// applicationId.getId(), e);
-			// RMAuditLogger.logFailure(user, AuditConstants.SUBMIT_APP_REQUEST,
-			// e.getMessage(), "ClientRMService",
-			// "Exception in submitting application", applicationId);
-			System.err.println(e);
+			LOG.error(e.toString());
+			return new ResultStatus("failed");
 		}
-		//
-		// SubmitApplicationResponse response = recordFactory
-		// .newRecordInstance(SubmitApplicationResponse.class);
-		// return response;
 		return new ResultStatus("ok");
 	}
 

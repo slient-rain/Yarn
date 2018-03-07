@@ -35,6 +35,7 @@ public class Main {
 		dispatcher.register(SchedulerEventType.class, scheduler);
 		RMContext context=new RMContextImpl(dispatcher,rmStateStore);
 		context.setScheduler(scheduler);
+		
 		RMAppManager rAppManager=new RMAppManager(context);
 		ClientRMService clientRMService=new ClientRMService("ClientRMService",context,rAppManager);
 		clientRMService.init();

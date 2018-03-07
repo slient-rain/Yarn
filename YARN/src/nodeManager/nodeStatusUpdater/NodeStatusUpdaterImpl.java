@@ -59,21 +59,8 @@ public class NodeStatusUpdaterImpl extends AbstractService implements
 
 	@Override
 	protected void serviceInit() throws Exception {
-		PropertiesFile pf = new PropertiesFile("config.properties");
-
-		int memoryMb = Integer.parseInt(pf.get("memoryMb"));
-		float vMemToPMem = Float.parseFloat(pf.get("vMemToPMem"));
-		int virtualMemoryMb = (int) Math.ceil(memoryMb * vMemToPMem);
-
-		int virtualCores = Integer.parseInt(pf.get("virtualCores"));
-
-		this.totalResource = new Resource();
-		this.totalResource.setMemory(memoryMb);
-		this.totalResource.setVirtualCores(virtualCores);
+		getResources();
 		super.serviceInit();
-		LOG.info("Initialized nodemanager for " + nodeId + ":"
-				+ " physical-memory=" + memoryMb + " virtual-memory="
-				+ virtualMemoryMb + " virtual-cores=" + virtualCores);
 	}
 
 	@Override
@@ -112,7 +99,7 @@ public class NodeStatusUpdaterImpl extends AbstractService implements
 		request.setNodeId(this.nodeId);
 		RegisterNodeManagerResponse regNMResponse = resourceTracker
 				.registerNodeManager(request);
-		System.out.println("NodeStatusUpdaterImpl.registerNodeManager():"
+		LOG.debug("util check: registerNodeManager response:"
 				+ regNMResponse.toString());
 		// this.rmIdentifier = regNMResponse.getRMIdentifier();
 		// if the Resourcemanager instructs NM to shutdown.
@@ -141,8 +128,7 @@ public class NodeStatusUpdaterImpl extends AbstractService implements
 						request.setNodeId(nodeId);
 						NodeHeartbeatResponse response = resourceTracker
 								.nodeHeartbeat(request);
-						System.out
-								.println("NodeStatusUpdaterImpl.nodeHeartbeat():"
+						LOG.debug("util check: nodeHeartbeat response :"
 										+ response.toString());
 
 						// get next heartbeat interval from response
@@ -151,13 +137,13 @@ public class NodeStatusUpdaterImpl extends AbstractService implements
 						// updateMasterKeys(response);
 
 						if ("SHUTDOWN".equals(response.getNodeAction())) {
-							
+
 						}
 						if ("RESYNC".equals(response.getNodeAction())) {
-							
+
 						}
 
-					}finally {
+					} finally {
 						synchronized (heartbeatMonitor) {
 							nextHeartBeatInterval = nextHeartBeatInterval <= 0 ? DEFAULFNEXTHEARTBEATINTERVAL
 									: nextHeartBeatInterval;
@@ -173,6 +159,24 @@ public class NodeStatusUpdaterImpl extends AbstractService implements
 		};
 		statusUpdater = new Thread(statusUpdaterRunnable, "Node Status Updater");
 		statusUpdater.start();
+	}
+
+	protected void getResources() {
+		PropertiesFile pf = new PropertiesFile("config.properties");
+
+		int memoryMb = Integer.parseInt(pf.get("memoryMb"));
+		float vMemToPMem = Float.parseFloat(pf.get("vMemToPMem"));
+		int virtualMemoryMb = (int) Math.ceil(memoryMb * vMemToPMem);
+
+		int virtualCores = Integer.parseInt(pf.get("virtualCores"));
+
+		this.totalResource = new Resource();
+		this.totalResource.setMemory(memoryMb);
+		this.totalResource.setVirtualCores(virtualCores);
+
+		LOG.info("Initialized nodemanager for " + this.nodeId + ":"
+				+ " physical-memory=" + memoryMb + " virtual-memory="
+				+ virtualMemoryMb + " virtual-cores=" + virtualCores);
 	}
 
 	protected void stopRMProxy() {

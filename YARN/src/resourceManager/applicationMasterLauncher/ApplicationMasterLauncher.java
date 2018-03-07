@@ -73,7 +73,7 @@ public class ApplicationMasterLauncher extends AbstractService implements
     return launcher;
   }
   
-  private void launch(Allocation allocation) {
+  public void launch(Allocation allocation) {
     Runnable launcher = createRunnableLauncher(allocation, 
         AMLauncherEventType.LAUNCH);
     masterEvents.add(launcher);

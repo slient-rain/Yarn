@@ -67,7 +67,6 @@ public class RMAppManager // implements
 	public void submitApplication(
 			ApplicationSubmissionContext submissionContext, long submitTime,
 			boolean isRecovered, String user) throws Exception {
-		System.out.println("in RMAppManager:submitApplication() ");
 		ApplicationId applicationId = submissionContext.getApplicationId();
 		// Create RMApp
 		RMApp application = new RMAppImpl(applicationId, rmContext,

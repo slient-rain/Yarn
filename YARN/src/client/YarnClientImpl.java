@@ -13,14 +13,14 @@ import protocol.protocolWritable.GetNewApplicationResponse;
 
 
 
+import protocol.protocolWritable.ResultStatus;
 import resourceManager.scheduler.ApplicationId;
 import resourceManager.scheduler.Scheduler;
 import rpc.core.RPC;
-
 import util.PropertiesFile;
 
 public class YarnClientImpl extends YarnClient {
-	private static final Logger LOG = LoggerFactory.getLogger(Scheduler.class);
+	private static final Logger LOG = LoggerFactory.getLogger(YarnClientImpl.class);
 	protected ApplicationClientProtocol rmClient;
 	protected InetSocketAddress rmAddress;
 	protected long statePollIntervalMillis;
@@ -68,38 +68,17 @@ public class YarnClientImpl extends YarnClient {
 		GetNewApplicationResponse newApp = getNewApplication();
 		ApplicationId appId = newApp.getApplicationId();
 		submissionContext.setApplicationId(appId);
+		LOG.debug("util check: new  created ApplicationId " + appId);
 		return new YarnClientApplication(newApp, submissionContext);
 	}
 
 	@Override
 	public void submitApplication(ApplicationSubmissionContext appContext){
 		ApplicationId applicationId = appContext.getApplicationId();
-		rmClient.submitApplication(appContext);
-//
-//		int pollCount = 0;
-//		while (true) {
-//			YarnApplicationState state =
-//					getApplicationReport(applicationId).getYarnApplicationState();
-//			if (!state.equals(YarnApplicationState.NEW) &&
-//					!state.equals(YarnApplicationState.NEW_SAVING)) {
-//				break;
-//			}
-//			// Notify the client through the log every 10 poll, in case the client
-//			// is blocked here too long.
-//			if (++pollCount % 10 == 0) {
-//				LOG.info("Application submission is not finished, " +
-//						"submitted application " + applicationId +
-//						" is still in " + state);
-//			}
-//			try {
-//				Thread.sleep(statePollIntervalMillis);
-//			} catch (InterruptedException ie) {
-//			}
-//		}
-//
-
-		System.out.println("Submitted application " + applicationId + " to ResourceManager"
-				+ " at " + rmAddress);
+		LOG.debug("util check: in YarnClient");
+		ResultStatus res=rmClient.submitApplication(appContext);
+		LOG.debug("util check: Submitted application " + applicationId + " to ResourceManager"
+				+ " at " + this.rmAddress+"result status:"+res.toString());
 	}
 
 	

@@ -18,16 +18,22 @@ package nodeManager.nodeManagerService;
  * limitations under the License.
  */
 
+import nodeManager.nodeStatusUpdater.NodeStatusUpdaterImpl;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import protocol.protocol.ContainerManagementProtocol;
 import protocol.protocolWritable.StartContainersRequest;
 import protocol.protocolWritable.StartContainersResponse;
 
 public class NodeManagerService implements ContainerManagementProtocol {
-
+	private static final Logger LOG = LoggerFactory
+			.getLogger(NodeManagerService.class);
 	@Override
 	synchronized public StartContainersResponse startContainers(
 			StartContainersRequest requests) {
-		System.out.println("NodeManagerService.StartContainersResponse():"
+		LOG.debug("util check: StartContainersResponse request:"
 				+ requests.getRequests().get(0).toString());
 
 		StartContainersResponse response = new StartContainersResponse("ok");

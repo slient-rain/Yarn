@@ -82,6 +82,7 @@ public class ResourceTrackerService extends AbstractService implements
 	protected void serviceStart() throws Exception {
 		this.server = RPC.getServer(this, resourceTrackerAddress.getHostName(),
 				resourceTrackerAddress.getPort());
+		LOG.debug("util check: resourceTrackerService start listen on port :"+ resourceTrackerAddress.getPort());
 		this.server.start();
 		super.serviceStart();
 	}
@@ -98,7 +99,7 @@ public class ResourceTrackerService extends AbstractService implements
 	@Override
 	public RegisterNodeManagerResponse registerNodeManager(
 			RegisterNodeManagerRequest request) {
-		System.out.println("registerNodeManager:" + request.toString());
+		LOG.debug("util check: registerNodeManager:" + request.toString());
 		NodeId nodeId = request.getNodeId();
 		String host = nodeId.getHost();
 		int cmPort = nodeId.getPort();
@@ -123,76 +124,13 @@ public class ResourceTrackerService extends AbstractService implements
 	@SuppressWarnings("unchecked")
 	@Override
 	public NodeHeartbeatResponse nodeHeartbeat(NodeHeartbeatRequest request) {
-		System.out.println("ResourceTrackerService.nodeHeartbeat()"
+		LOG.debug("util check: ResourceTrackerService.nodeHeartbeat()"
 				+ request.toString());
-		// NodeStatus remoteNodeStatus = request.getNodeStatus();
-		// /**
-		// * Here is the node heartbeat sequence...
-		// * 1. Check if it's a registered node
-		// * 2. Check if it's a valid (i.e. not excluded) node
-		// * 3. Check if it's a 'fresh' heartbeat i.e. not duplicate heartbeat
-		// * 4. Send healthStatus to RMNode
-		// */
-		//
 		NodeId nodeId = request.getNodeId();
-		//
-		// // 1. Check if it's a registered node
-		RMNode rmNode = this.rmContext.getRMNodes().get(nodeId);
-		// if (rmNode == null) {
-		// /* node does not exist */
-		// String message = "Node not found resyncing " +
-		// remoteNodeStatus.getNodeId();
-		// LOG.info(message);
-		// resync.setDiagnosticsMessage(message);
-		// return resync;
-		// }
-		//
-		// // Send ping
-		// this.nmLivelinessMonitor.receivedPing(nodeId);
-		//
-		// // 2. Check if it's a valid (i.e. not excluded) node
-		// if (!this.nodesListManager.isValidNode(rmNode.getHostName())) {
-		// String message =
-		// "Disallowed NodeManager nodeId: " + nodeId + " hostname: "
-		// + rmNode.getNodeAddress();
-		// LOG.info(message);
-		// shutDown.setDiagnosticsMessage(message);
-		// this.rmContext.getDispatcher().getEventHandler().handle(
-		// new RMNodeEvent(nodeId, RMNodeEventType.DECOMMISSION));
-		// return shutDown;
-		// }
-
-		// 3. Check if it's a 'fresh' heartbeat i.e. not duplicate heartbeat
-		// NodeHeartbeatResponse lastNodeHeartbeatResponse =
-		// rmNode.getLastNodeHeartBeatResponse();
-		// if (remoteNodeStatus.getResponseId() + 1 == lastNodeHeartbeatResponse
-		// .getResponseId()) {
-		// LOG.info("Received duplicate heartbeat from node "
-		// + rmNode.getNodeAddress());
-		// return lastNodeHeartbeatResponse;
-		// } else if (remoteNodeStatus.getResponseId() + 1 <
-		// lastNodeHeartbeatResponse
-		// .getResponseId()) {
-		// String message =
-		// "Too far behind rm response id:"
-		// + lastNodeHeartbeatResponse.getResponseId() + " nm response id:"
-		// + remoteNodeStatus.getResponseId();
-		// LOG.info(message);
-		// resync.setDiagnosticsMessage(message);
-		// // TODO: Just sending reboot is not enough. Think more.
-		// this.rmContext.getDispatcher().getEventHandler().handle(
-		// new RMNodeEvent(nodeId, RMNodeEventType.REBOOTING));
-		// return resync;
-		// }
-		//
-		// // Heartbeat response
+		RMNode rmNode = this.rmContext.getRMNodes().get(nodeId);		
 		NodeHeartbeatResponse nodeHeartBeatResponse = new NodeHeartbeatResponse(
 				null, null, "NORMAL", nextHeartBeatInterval);
-		rmNode.updateNodeHeartbeatResponseForCleanup(nodeHeartBeatResponse);
-		//
-		// populateKeys(request, nodeHeartBeatResponse);
-		//
-		// // 4. Send status to RMNode, saving the latest response.
+		rmNode.updateNodeHeartbeatResponseForCleanup(nodeHeartBeatResponse);		
 		this.rmContext
 				.getDispatcher()
 				.getEventHandler()
@@ -205,46 +143,7 @@ public class ResourceTrackerService extends AbstractService implements
 		return nodeHeartBeatResponse;
 	}
 
-	// private void populateKeys(NodeHeartbeatRequest request,
-	// NodeHeartbeatResponse nodeHeartBeatResponse) {
-	//
-	// // Check if node's masterKey needs to be updated and if the currentKey
-	// has
-	// // roller over, send it across
-	//
-	// // ContainerTokenMasterKey
-	//
-	// MasterKey nextMasterKeyForNode =
-	// this.containerTokenSecretManager.getNextKey();
-	// if (nextMasterKeyForNode != null
-	// && (request.getLastKnownContainerTokenMasterKey().getKeyId()
-	// != nextMasterKeyForNode.getKeyId())) {
-	// nodeHeartBeatResponse.setContainerTokenMasterKey(nextMasterKeyForNode);
-	// }
-	//
-	// // NMTokenMasterKey
-	//
-	// nextMasterKeyForNode = this.nmTokenSecretManager.getNextKey();
-	// if (nextMasterKeyForNode != null
-	// && (request.getLastKnownNMTokenMasterKey().getKeyId()
-	// != nextMasterKeyForNode.getKeyId())) {
-	// nodeHeartBeatResponse.setNMTokenMasterKey(nextMasterKeyForNode);
-	// }
-	// }
-	//
-	// /**
-	// * resolving the network topology.
-	// * @param hostName the hostname of this node.
-	// * @return the resolved {@link Node} for this nodemanager.
-	// */
-	// public static Node resolve(String hostName) {
-	// return RackResolver.resolve(hostName);
-	// }
-	//
-	// void refreshServiceAcls(Configuration configuration,
-	// PolicyProvider policyProvider) {
-	// this.server.refreshServiceAcl(configuration, policyProvider);
-	// }
+	
 
 	InetSocketAddress getBindAddress() {
 		PropertiesFile pf = new PropertiesFile("config.properties");

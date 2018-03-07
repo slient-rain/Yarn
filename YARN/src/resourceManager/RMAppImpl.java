@@ -393,25 +393,28 @@ public class RMAppImpl implements RMApp, Recoverable {
 
 		try {
 			ApplicationId appID = event.getApplicationId();
-			LOG.debug("Processing event for " + appID + " of type "
-					+ event.getType());
-			final RMAppState oldState = getState();
-			try {
-				/* keep the master in sync with the state machine */
-				this.stateMachine.doTransition(event.getType(), event);
-			} catch (InvalidStateTransitonException e) {
-				LOG.error("Can't handle this event at current state", e);
-				/* TODO fail the application on the failed transition */
-			}
+			//每个rmapp只处理自己的事件
+			if (this.applicationId.compareTo(appID) == 0) {
+				LOG.debug("Processing event for " + appID + " of type "
+						+ event.getType());
+				final RMAppState oldState = getState();
+				try {
+					/* keep the master in sync with the state machine */
+					this.stateMachine.doTransition(event.getType(), event);
+				} catch (InvalidStateTransitonException e) {
+					LOG.error("Can't handle this event at current state", e);
+					/* TODO fail the application on the failed transition */
+				}
 
-			if (oldState != getState()) {
-				LOG.info(appID + " State change from " + oldState + " to "
-						+ getState());
+				if (oldState != getState()) {
+					LOG.info(appID + " State change from " + oldState + " to "
+							+ getState());
+				}
 			}
-			System.out.println("当前状态：" + getState());
 		} finally {
 			this.writeLock.unlock();
 		}
+
 	}
 
 	@Override
@@ -426,7 +429,7 @@ public class RMAppImpl implements RMApp, Recoverable {
 		// // recover attempt
 		// ((RMAppAttemptImpl) currentAttempt).recover(state);
 		// }
-		System.out.println("in RMAppImple.recover  stored state:"
+		LOG.debug("in RMAppImple.recover  stored state:"
 				+ appState.toString());
 	}
 
@@ -452,7 +455,7 @@ public class RMAppImpl implements RMApp, Recoverable {
 	private static final class AppStartedTransition extends RMAppTransition {
 
 		public void transition(RMAppImpl app, RMAppEvent event) {
-			
+
 			/**
 			 * 下面的是从RMappAttempImpl.AttemptStartedTransition中复制过来的
 			 */
@@ -495,16 +498,7 @@ public class RMAppImpl implements RMApp, Recoverable {
 
 	private static final class RMAppSavingTransition extends RMAppTransition {
 		@Override
-		public void transition(RMAppImpl app, RMAppEvent event) {
-			// // If recovery is enabled then store the application information
-			// in a
-			// // non-blocking call so make sure that RM has stored the
-			// information
-			// // needed to restart the AM after RM restart without further
-			// client
-			// // communication
-			// LOG.info("Storing application with id " + app.applicationId);
-			System.out.println("in RMAppImpl : RMAppSavingTransition");
+		public void transition(RMAppImpl app, RMAppEvent event) {	
 			app.rmContext.getStateStore().storeApplication(app);
 		}
 	}
@@ -598,8 +592,6 @@ public class RMAppImpl implements RMApp, Recoverable {
 			// TODO Auto-generated method stub
 			return null;
 		}
-
-		
 
 	}
 }

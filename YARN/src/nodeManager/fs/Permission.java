@@ -20,7 +20,7 @@ public class Permission {
 			}
 			else if(file.isDirectory()) {
 				command.addAll(Arrays.asList(
-						"chmod","777",filePath ,"-R"
+						"chmod","-R","777",filePath 
 						));
 			}else{
 				System.err.println("chmod777Permission.filePath is illegal");

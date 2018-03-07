@@ -19,6 +19,7 @@ package nodeManager.container;
 
 import resourceManager.scheduler.ContainerId;
 import nodeManager.fs.Path;
+import nodeManager.resourceLocalizationService.LocalResourceRequest;
 
 
 

@@ -25,13 +25,13 @@ public class Main {
 		((AsyncDispatcher)dispatcher).init();
 		((AsyncDispatcher)dispatcher).start();
 		ContextImpl context=new ContextImpl();
-		context.setNodeId(new NodeId("localhost",81));
+		
+		context.setNodeId(new NodeId("localhost",8003));
 		NodeStatusUpdaterImpl updater=new NodeStatusUpdaterImpl(context, dispatcher);
 		updater.init();
 		updater.start();
-
 		ContainerManagementProtocol instance=new NodeManagerService();
-		Server server=RPC.getServer(instance, "localhost", 81);
+		Server server=RPC.getServer(instance, "localhost", 8003);
 		server.start();
 
 	}

@@ -15,8 +15,7 @@
 		<!-- 定义日志格式 -->
 		<layout class="ch.qos.logback.classic.PatternLayout">
 			<pattern>
-				%date{yyyy-MM-dd HH:mm:ss} %level [%thread]
-				%logger[%file:%line ] - %msg%n %caller{1}
+				%date{yyyy-MM-dd HH:mm:ss} %level [%thread] %10logger[%file:%line] - %msg%n
 			</pattern>
 		</layout>
 	</appender>
@@ -26,13 +25,12 @@
 		<file>${LOG_HOME}/current_file_log.log</file>
 		<layout class="ch.qos.logback.classic.PatternLayout">
 			<pattern>
-				%date{yyyy-MM-dd HH:mm:ss} %level [%thread]
-				%10logger[%file:%line] - %msg%n
+				%date{yyyy-MM-dd HH:mm:ss} %level [%thread] %10logger[%file:%line] - %msg%n
 			</pattern>
 		</layout>
 	</appender>
 
-	<!-- 运行时每分钟滚动并压缩 -->
+	<!-- 每日滚动并压缩 -->
 	<appender name="DAILY_LOG"
 		class="ch.qos.logback.core.rolling.RollingFileAppender">
 		<file>${LOG_HOME}/time_base_rolling.log</file>
@@ -76,11 +74,7 @@
 	</appender>
 
 	<!-- 单独对指定的日志设定级别，使该日志对象输出地日志级别限定在：“INFO”级别，不受跟级别的限制 目标可以是类或者包 -->
-	<logger name="resourceManager.scheduler.Scheduler" level="debug"
-		additivity="true">
-		<appender-ref ref="FILE" />
-	</logger>
-
 	<root level="debug">
+		<appender-ref ref="FILE" />
 	</root>
 </configuration>
