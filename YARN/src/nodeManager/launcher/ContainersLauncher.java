@@ -119,7 +119,7 @@ implements EventHandler<ContainersLauncherEvent> {
 					new ContainerLaunch(
 //							context, 
 //							getConfig(), 
-//							dispatcher, 
+							dispatcher, 
 							exec, 
 							app,
 							event.getContainer()

@@ -1,6 +1,9 @@
 package client;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
+import java.util.Properties;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,8 +35,10 @@ public class YarnClientImpl extends YarnClient {
 	}
 
 	private static InetSocketAddress getRmAddress() {
-		PropertiesFile pf=new PropertiesFile("config.properties");
-		return new InetSocketAddress(pf.get("host"), Integer.parseInt(pf.get("port")));
+
+		PropertiesFile pf = new PropertiesFile("config.properties");
+		//PropertiesFile pf=new PropertiesFile("config.properties");
+		return new InetSocketAddress(pf.get("resourcemanagerhost"), Integer.parseInt((pf.get("clientserviceport"))));
 	}
 
 	@Override

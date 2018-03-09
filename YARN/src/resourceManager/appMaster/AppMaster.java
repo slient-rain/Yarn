@@ -7,7 +7,8 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import client.test.Main;
+import protocol.protocolWritable.ApplicationSubmissionContext;
+import client.test.ClientMain;
 
 import com.sun.org.apache.regexp.internal.recompile;
 
@@ -34,8 +35,10 @@ public class AppMaster implements  Runnable{
 	}
 	public void run() {
 		while (!isStopped) {
-			Resource resource=rmContext.getRMApps().get(applicationAttemptId.getApplicationId()).getApplicationSubmissionContext().getResource();
-			ResourceRequest ask=new ResourceRequest(new Priority(1),ResourceRequest.ANY,resource ,1);
+			int containerNum=1;
+			ApplicationSubmissionContext appsubcontext=rmContext.getRMApps().get(applicationAttemptId.getApplicationId()).getApplicationSubmissionContext();
+			Resource resource=appsubcontext.getResource();
+			ResourceRequest ask=new ResourceRequest(appsubcontext.getPriority(),ResourceRequest.ANY,resource,containerNum);
 			Allocation allocation=rmContext.getScheduler().allocate(
 					applicationAttemptId,
 					new ArrayList<ResourceRequest>(Arrays.asList(ask)) , 
@@ -43,14 +46,14 @@ public class AppMaster implements  Runnable{
 					new ArrayList<String>(), 
 					new ArrayList<String>());
 			if(allocation.getContainers().size()>0) {				
-				System.out.println("appmaster 获取到资源:"+allocation.getContainers().get(0).toString());
+				LOG.debug("appmaster 获取到资源:"+allocation.getContainers().get(0).toString());
 				AMLauncherEvent event=new AMLauncherEvent(AMLauncherEventType.LAUNCH, allocation);
 				rmContext.getDispatcher().getEventHandler().handle(event);
 				break;
 			}				
 			try {
 				synchronized (lock) {				
-					LOG.info("appmaster 未获取到资源，重新进行allocate资源请求");
+					LOG.debug("appmaster 未获取到资源，重新进行allocate资源请求");
 					lock.wait(DEFAULTHEARTBEATINTERVAL);
 				}
 			} catch (InterruptedException e) {

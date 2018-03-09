@@ -124,7 +124,7 @@ public class ContainerManagerImpl extends CompositeService implements
 	public StartContainersResponse startContainers(
 			StartContainersRequest requests) {
 		for (StartContainerRequest request : requests.getRequests()) {
-			LOG.debug("util check: StartContainersResponse request:"
+			LOG.debug("util check: StartContainers request:"
 					+ request.toString());
 			ContainerId containerId = null;
 			startContainerInternal(
@@ -152,7 +152,7 @@ public class ContainerManagerImpl extends CompositeService implements
 		ApplicationId applicationID = containerId.getApplicationAttemptId()
 				.getApplicationId();
 		if (context.getContainers().putIfAbsent(containerId, container) != null) {
-			System.err.println(user + "ContainerManagerImpl"
+			LOG.error(user + "ContainerManagerImpl"
 					+ "Container already running on this node!"
 					+ applicationID.toString() + containerId.toString());
 			// throw RPCUtil.getRemoteException("Container " + containerIdStr
@@ -483,7 +483,7 @@ public class ContainerManagerImpl extends CompositeService implements
 
 	InetSocketAddress getBindAddress() {
 		PropertiesFile pf = new PropertiesFile("config.properties");
-		return new InetSocketAddress(pf.get("host"), Integer.parseInt(pf
+		return new InetSocketAddress("localhost", Integer.parseInt(pf
 				.get("ContainerManagerPort")));
 	}
 

@@ -13,7 +13,7 @@ import resourceManager.scheduler.SchedulerEventType;
 import dispatcher.core.AsyncDispatcher;
 import dispatcher.core.Dispatcher;
 
-public class Main {
+public class ResourcemanagerMain {
 	public static void main(String[] args) {
 
 		Dispatcher dispatcher = new AsyncDispatcher();

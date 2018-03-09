@@ -22,6 +22,10 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import client.test.ClientMain;
 import rpc.io.UTF8;
 import rpc.io.Writable;
 
@@ -44,6 +48,7 @@ import rpc.io.Writable;
 public class ContainerStatus  implements Writable{
 	ContainerId containerId;
 	ContainerState state;
+	private static final Logger LOG = LoggerFactory.getLogger(ClientMain.class);
 	
 	/**
 	 * <p>Get the <em>exit status</em> for the container.</p>
@@ -71,7 +76,9 @@ public class ContainerStatus  implements Writable{
 	 * @return <em>diagnostic messages</em> for failed containers
 	 */
 	String diagnostics;
-	public ContainerStatus(){}
+	public ContainerStatus(){
+		this.containerId=new ContainerId();
+	}
 	public ContainerStatus(ContainerId containerId, ContainerState state,
 			int exitStatus, String diagnostics) {
 		super();
@@ -120,12 +127,19 @@ public class ContainerStatus  implements Writable{
 
 	@Override
 	public void write(DataOutput out) throws IOException {
+		LOG.debug("container status wirte: "+this.toString());
 		containerId.write(out);
 		UTF8.writeString(out,state.name());
 		UTF8.writeString(out, diagnostics);
 		out.writeInt(exitStatus);
 	}
 
+	@Override
+	public String toString() {
+		return "ContainerStatus [containerId=" + containerId + ", state="
+				+ state + ", exitStatus=" + exitStatus + ", diagnostics="
+				+ diagnostics + "]";
+	}
 	@Override
 	public void readFields(DataInput in) throws IOException {
 		containerId.readFields(in);

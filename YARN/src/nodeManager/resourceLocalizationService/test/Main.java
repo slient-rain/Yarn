@@ -16,7 +16,7 @@ import util.PropertiesFile;
 import nodeManager.fs.FileContext;
 import nodeManager.fs.Path;
 import nodeManager.resourceLocalizationService.FSDownload;
-import nodeManager.test.Mian;
+import nodeManager.test.NodemanagerMian;
 
 public class Main {
 	public static void main(String[] args) {

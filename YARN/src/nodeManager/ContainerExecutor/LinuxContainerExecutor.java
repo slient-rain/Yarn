@@ -28,7 +28,10 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import dispatcher.core.Dispatcher;
 import nodeManager.container.Container;
+import nodeManager.container.ContainerEvent;
+import nodeManager.container.ContainerEventType;
 import nodeManager.fs.FileContext;
 import nodeManager.fs.Path;
 import nodeManager.fs.Permission;
@@ -42,11 +45,12 @@ public class LinuxContainerExecutor extends ContainerExecutor {
 
 	private static final Logger LOG = LoggerFactory
 			.getLogger(LinuxContainerExecutor.class);
-
 	private String containerExecutorExe;
 	// private LCEResourcesHandler resourcesHandler;
 	private boolean containerSchedPriorityIsSet = false;
 	private int containerSchedPriorityAdjustment = 0;
+
+	
 
 	// @Override
 	// public void setConf(Configuration conf) {
@@ -183,7 +187,8 @@ public class LinuxContainerExecutor extends ContainerExecutor {
 		// Permission.chmod777Permission(localDirs.get(0));
 		// lfs.copy(execFilePath.toString(), execFileWorkPath.toString());
 		lfs.copy(applicationResouceDir.toString(), containerWorkDir.toString());
-		LOG.debug("util check: containerWorkDir path: "+containerWorkDir.toString());
+		LOG.debug("util check: containerWorkDir path: "
+				+ containerWorkDir.toString());
 		Permission.chmod777Permission(containerWorkDir.toString());
 		/** copy launch script to work dir **/
 		Path nmPrivateCotainerScriptFile = new Path(nmPrivateContainerDir,
@@ -198,21 +203,21 @@ public class LinuxContainerExecutor extends ContainerExecutor {
 		ShellCommandExecutor shExec = null;
 		List<String> command = new ArrayList<String>();
 		// addSchedPriorityCommand(command);
-		command.addAll(Arrays.asList(
-				"bash", launchDstFile.toString()));
+		command.addAll(Arrays.asList("bash", launchDstFile.toString()));
 		String[] commandArray = command.toArray(new String[command.size()]);
 		shExec = new ShellCommandExecutor(commandArray
 		// , null, // NM's cwd
 		// container.getLaunchContext().getEnvironment()
 		); // sanitized env
-		// DEBUG
-		LOG.debug("util check: launchContainer command: " + Arrays.toString(commandArray));
+			// DEBUG
+		LOG.debug("util check: launchContainer command: "
+				+ Arrays.toString(commandArray));
 		shExec.execute();
 		if (LOG.isDebugEnabled()) {
 			logOutput(shExec.getOutput());
 		}
-
 		return 0;
+
 	}
 
 	@Override

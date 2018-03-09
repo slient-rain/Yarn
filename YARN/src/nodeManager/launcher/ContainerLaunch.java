@@ -46,339 +46,372 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 import resourceManager.scheduler.ContainerId;
+import util.PropertiesFile;
 import util.StringUtils;
-
 import nodeManager.ContainerExecutor.ContainerExecutor;
+import nodeManager.ContainerExecutor.ContainerExecutor.ExitCode;
 import nodeManager.application.Application;
 import nodeManager.container.Container;
+import nodeManager.container.ContainerEvent;
+import nodeManager.container.ContainerEventType;
+import nodeManager.container.ContainerExitEvent;
 import nodeManager.fs.FileContext;
 import nodeManager.fs.Path;
 import nodeManager.shell.Shell;
-
 import dispatcher.core.Dispatcher;
-
-
 
 public class ContainerLaunch implements Callable<Integer> {
 
-	private static final Logger LOG = LoggerFactory.getLogger(ContainersLauncher.class);
+	private static final Logger LOG = LoggerFactory
+			.getLogger(ContainersLauncher.class);
 
-
-	public static final String CONTAINER_SCRIPT =
-			Shell.appendScriptExtension("launch_container");
+	public static final String CONTAINER_SCRIPT = Shell
+			.appendScriptExtension("launch_container");
 	public static final String FINAL_CONTAINER_TOKENS_FILE = "container_tokens";
 
 	private static final String PID_FILE_NAME_FMT = "%s.pid";
 
-	//	private final Dispatcher dispatcher;
+	private final Dispatcher dispatcher;
 	private final ContainerExecutor exec;
 	private final Application app;
 	private final Container container;
-	//  private final Configuration conf;
-	//  private final Context context;
-	//  private final ContainerManagerImpl containerManager;
+	// private final Configuration conf;
+	// private final Context context;
+	// private final ContainerManagerImpl containerManager;
 
-	private volatile AtomicBoolean shouldLaunchContainer = new AtomicBoolean(false);
+	private volatile AtomicBoolean shouldLaunchContainer = new AtomicBoolean(
+			false);
 	private volatile AtomicBoolean completed = new AtomicBoolean(false);
 
 	private long sleepDelayBeforeSigKill = 250;
 	private long maxKillWaitTime = 2000;
 
 	private Path pidFilePath = null;
-	Properties pro;
+	PropertiesFile pf;
 
-
-	//  private final LocalDirsHandlerService dirsHandler;
+	// private final LocalDirsHandlerService dirsHandler;
 
 	public ContainerLaunch(
-			//		  Context context, 
-			//		  Configuration configuration,
-			//			Dispatcher dispatcher, 
-			ContainerExecutor exec, 
-			Application app,
+			// Context context,
+			// Configuration configuration,
+			Dispatcher dispatcher, ContainerExecutor exec, Application app,
 			Container container
-			//      LocalDirsHandlerService dirsHandler,
-			//      ContainerManagerImpl containerManager
-			) {
-		//    this.context = context;
-		//    this.conf = configuration;
+	// LocalDirsHandlerService dirsHandler,
+	// ContainerManagerImpl containerManager
+	) {
+		// this.context = context;
+		// this.conf = configuration;
 		this.app = app;
 		this.exec = exec;
 		this.container = container;
-		//		this.dispatcher = dispatcher;
-		//    this.dirsHandler = dirsHandler;
-		//    this.containerManager = containerManager;
-		//    this.sleepDelayBeforeSigKill =
-		//        conf.getLong(YarnConfiguration.NM_SLEEP_DELAY_BEFORE_SIGKILL_MS,
-		//            YarnConfiguration.DEFAULT_NM_SLEEP_DELAY_BEFORE_SIGKILL_MS);
-		//    this.maxKillWaitTime =
-		//        conf.getLong(YarnConfiguration.NM_PROCESS_KILL_WAIT_MS,
-		//            YarnConfiguration.DEFAULT_NM_PROCESS_KILL_WAIT_MS);
+		this.dispatcher = dispatcher;
+		// this.dirsHandler = dirsHandler;
+		// this.containerManager = containerManager;
+		// this.sleepDelayBeforeSigKill =
+		// conf.getLong(YarnConfiguration.NM_SLEEP_DELAY_BEFORE_SIGKILL_MS,
+		// YarnConfiguration.DEFAULT_NM_SLEEP_DELAY_BEFORE_SIGKILL_MS);
+		// this.maxKillWaitTime =
+		// conf.getLong(YarnConfiguration.NM_PROCESS_KILL_WAIT_MS,
+		// YarnConfiguration.DEFAULT_NM_PROCESS_KILL_WAIT_MS);
 
-		String rootPath = System.getProperty("user.dir").replace("\\", "/");
-		pro = new Properties();
-		InputStream in;
-		try {
-			in = new BufferedInputStream (new FileInputStream(rootPath+"/src/config.properties"));
-			pro.load(in);
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
+		String z = System.getProperty("user.dir").replace("\\", "/");
+		pf = new PropertiesFile("config.properties");
 
 	}
+
 	/**
-	 * 组织目录结构
-	 * 创建执行脚本文件内容
-	 * 将脚本写到文件中
-	 * 执行脚本
+	 * 组织目录结构 创建执行脚本文件内容 将脚本写到文件中 执行脚本
 	 **/
 	@Override
-	@SuppressWarnings("unchecked") // dispatcher not typed
+	@SuppressWarnings("unchecked")
+	// dispatcher not typed
 	public Integer call() {
-		//    final ContainerLaunchContext launchContext = container.getLaunchContext();
-		Map<Path,List<String>> localResources = null;
+		// final ContainerLaunchContext launchContext =
+		// container.getLaunchContext();
+		Map<Path, List<String>> localResources = null;
 		ContainerId containerID = container.getContainerId();
 		String containerIdStr = containerID.toString();
-		String appIdStr=app.getAppId().toString();
-		//		final List<String> command = launchContext.getCommands();
-		String user=container.getUser();
-		List<String> localDirs=new ArrayList<String>(Arrays.asList(getNodeManagerLocalDirs().toString()));
+		String appIdStr = app.getAppId().toString();
+		// final List<String> command = launchContext.getCommands();
+		String user = container.getUser();
+		List<String> localDirs = new ArrayList<String>(
+				Arrays.asList(getNodeManagerLocalDirs().toString()));
 		int ret = -1;
-		
-		/**组织目录结构 **/
+
+		/** 组织目录结构 **/
 		/**
-		 *${local-dirs}/nmPrivate/${appid}/${containerId}
+		 * ${local-dirs}/nmPrivate/${appid}/${containerId}
 		 **/
-		Path nmPrivateContainerDir =  getNMPrivateContainerDir(appIdStr,containerIdStr);
+		Path nmPrivateContainerDir = getNMPrivateContainerDir(appIdStr,
+				containerIdStr);
 		/**
-		 *${local-dirs}/nmPrivate/${appid}/${containerId}/launch_container.cmd
+		 * ${local-dirs}/nmPrivate/${appid}/${containerId}/launch_container.cmd
 		 **/
-		Path mPrivateContainerScriptFile =new Path(nmPrivateContainerDir,CONTAINER_SCRIPT);
+		Path mPrivateContainerScriptFile = new Path(nmPrivateContainerDir,
+				CONTAINER_SCRIPT);
 		/**
-		 *${local-dirs}/filecache/${appid}/${containerId}
+		 * ${local-dirs}/filecache/${appid}/${containerId}
 		 **/
-		Path applicationResouceDir =getApplicationResouceDir(appIdStr,containerIdStr);
+		Path applicationResouceDir = getApplicationResouceDir(appIdStr,
+				containerIdStr);
 		/**
-		 *${local-dirs}/usercache/${user}/appcache/${appid}/${containerId}
+		 * ${local-dirs}/usercache/${user}/appcache/${appid}/${containerId}
 		 **/
-		Path containerWorkDir=getContainerWorkDir(appIdStr,containerIdStr,user);
-		FileContext lfs=new FileContext();
+		Path containerWorkDir = getContainerWorkDir(appIdStr, containerIdStr,
+				user);
+		FileContext lfs = new FileContext();
 		lfs.mkdir(nmPrivateContainerDir.toString());
 		lfs.mkdir(applicationResouceDir.toString());
 		lfs.mkdir(containerWorkDir.toString());
-		/**创建执行脚本文件内容**/
-		List<String> commands=container.getLaunchContext().getCommands();
-		LOG.debug( "commands from client:"+commands);
-		String file=commands.remove(commands.size()-1);
-		commands.add(containerWorkDir+"/"+file);
-		LOG.debug( "launch script path: "+containerWorkDir.toString()+"/"+CONTAINER_SCRIPT);
-//		List<String> commands=new LinkedList<String>();
-//		commands.add(new String("#!/bin/bash"));
-//		commands.add(new String("sudo -S cgexec -g cpu:cputest java -jar "+containerWorkDir.toString()+"/cgroup.jar << EOF"));
-//		commands.add(new String("root"));
-//		commands.add(new String("EOF"));
-		/**将脚本写到文件中**/
+		/** 创建执行脚本文件内容 **/
+		List<String> commands = container.getLaunchContext().getCommands();
+		LOG.debug("commands from client:" + commands);
+		String file = commands.remove(commands.size() - 1);
+		commands.add(containerWorkDir + "/" + file);
+		LOG.debug("launch script path: " + containerWorkDir.toString() + "/"
+				+ CONTAINER_SCRIPT);
+		// List<String> commands=new LinkedList<String>();
+		// commands.add(new String("#!/bin/bash"));
+		// commands.add(new
+		// String("sudo -S cgexec -g cpu:cputest java -jar "+containerWorkDir.toString()+"/cgroup.jar << EOF"));
+		// commands.add(new String("root"));
+		// commands.add(new String("EOF"));
+		/** 将脚本写到文件中 **/
 		writeToScript(mPrivateContainerScriptFile, commands);
+
+		/** 通知ContainerImpl启动Container监控机制 **/
+		// LaunchContainer is a blocking call. We are here almost means the
+		// container is launched, so send out the event.
+		dispatcher.getEventHandler().handle(
+				new ContainerEvent(containerID,
+						ContainerEventType.CONTAINER_LAUNCHED));
 		try {
-			/**执行脚本**/
-			ret = exec.launchContainer(
-					container, 
-					nmPrivateContainerDir,
-					//					nmPrivateTokensPath, 
-					user, 
-					appIdStr, 
-					containerWorkDir,
-					applicationResouceDir,
+			/** 执行脚本 **/
+			ret = exec.launchContainer(container, nmPrivateContainerDir,
+					// nmPrivateTokensPath,
+					user, appIdStr, containerWorkDir, applicationResouceDir,
 					localDirs
-					//					logDirs
+			// logDirs
 					);
 		} catch (Throwable e) {
 			LOG.warn("Failed to launch container.", e);
-			//			dispatcher.getEventHandler().handle(new ContainerExitEvent(
-			//					containerID, ContainerEventType.CONTAINER_EXITED_WITH_FAILURE, ret,
-			//					e.getMessage()));
-			//			return ret;
+			dispatcher.getEventHandler().handle(
+					new ContainerExitEvent(containerID,
+							ContainerEventType.CONTAINER_EXITED_WITH_FAILURE,
+							ret, e.getMessage()));
+			return ret;
 		} finally {
-			//		completed.set(true);
-			//		exec.deactivateContainer(containerID);
+			completed.set(true);
+			exec.deactivateContainer(containerID);
 		}
-		return 0; 
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("Container " + containerIdStr
+					+ " completed with exit code " + ret);
+		}
+		if (ret == ExitCode.FORCE_KILLED.getExitCode()
+				|| ret == ExitCode.TERMINATED.getExitCode()) {
+			// If the process was killed, Send container_cleanedup_after_kill
+			// and
+			// just break out of this method.
+			dispatcher.getEventHandler().handle(
+					new ContainerExitEvent(containerID,
+							ContainerEventType.CONTAINER_KILLED_ON_REQUEST,
+							ret, "Container exited with a non-zero exit code "
+									+ ret));
+			return ret;
+		}
+
+		if (ret != 0) {
+			LOG.warn("Container exited with a non-zero exit code " + ret);
+			this.dispatcher.getEventHandler().handle(
+					new ContainerExitEvent(containerID,
+							ContainerEventType.CONTAINER_EXITED_WITH_FAILURE,
+							ret, "Container exited with a non-zero exit code "
+									+ ret));
+			return ret;
+		}
+
+		LOG.info("Container " + containerIdStr + " succeeded ");
+		dispatcher.getEventHandler().handle(
+				new ContainerEvent(containerID,
+						ContainerEventType.CONTAINER_EXITED_WITH_SUCCESS));
+		return 0;
 	}
 
-	public Path getNMPrivateContainerDir(String appId,String containerId){
-		Path root=getNodeManagerLocalDirs();
-		return new Path(root+"/nmPrivate/"+appId+"/"+containerId);
+	public Path getNMPrivateContainerDir(String appId, String containerId) {
+		Path root = getNodeManagerLocalDirs();
+		return new Path(root + "/nmPrivate/" + appId + "/" + containerId);
 	}
 
-	public Path getNodeManagerLocalDirs(){
-		String dir=pro.getProperty("local_dir");
+	public Path getNodeManagerLocalDirs() {
+		String dir = pf.get("local_dir");
 		return new Path(dir);
 	}
 
-	public Path getContainerWorkDir(String appId,String containerId,String user){
-		Path root=getNodeManagerLocalDirs();
-		return new Path(root+"/usercache/"+user+"/appcache/"+appId+"/"+containerId);
+	public Path getContainerWorkDir(String appId, String containerId,
+			String user) {
+		Path root = getNodeManagerLocalDirs();
+		return new Path(root + "/usercache/" + user + "/appcache/" + appId
+				+ "/" + containerId);
 	}
-	
-	public Path getApplicationResouceDir(String appId,String containerId){
-		Path root=getNodeManagerLocalDirs();
-		return new Path(root+"/filecache/"+appId+"/"+containerId);
+
+	public Path getApplicationResouceDir(String appId, String containerId) {
+		Path root = getNodeManagerLocalDirs();
+		return new Path(root + "/filecache/" + appId + "/" + containerId);
 	}
-	public void writeToScript(Path filePath,List<String> commands){
-		try
-		{
-			BufferedWriter out=new BufferedWriter(new FileWriter(filePath.toString()));
-			for(String com:commands){
+
+	public void writeToScript(Path filePath, List<String> commands) {
+		try {
+			BufferedWriter out = new BufferedWriter(new FileWriter(
+					filePath.toString()));
+			for (String com : commands) {
 				out.write(com);
 				out.write(" ");
-//				out.newLine();  //注意\n不一定在各种计算机上都能产生换行的效果
+				// out.newLine(); //注意\n不一定在各种计算机上都能产生换行的效果
 			}
 			out.close();
-		} catch (IOException e)
-		{
+		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
+
 	/**
-	 * Cleanup the container.
-	 * Cancels the launch if launch has not started yet or signals
-	 * the executor to not execute the process if not already done so.
-	 * Also, sends a SIGTERM followed by a SIGKILL to the process if
-	 * the process id is available.
+	 * Cleanup the container. Cancels the launch if launch has not started yet
+	 * or signals the executor to not execute the process if not already done
+	 * so. Also, sends a SIGTERM followed by a SIGKILL to the process if the
+	 * process id is available.
+	 * 
 	 * @throws IOException
 	 */
-	@SuppressWarnings("unchecked") // dispatcher not typed
-	//	public void cleanupContainer() throws IOException {
-	//		ContainerId containerId = container.getContainerId();
-	//		String containerIdStr = ConverterUtils.toString(containerId);
-	//		LOG.info("Cleaning up container " + containerIdStr);
+	@SuppressWarnings("unchecked")
+	// dispatcher not typed
+	// public void cleanupContainer() throws IOException {
+	// ContainerId containerId = container.getContainerId();
+	// String containerIdStr = ConverterUtils.toString(containerId);
+	// LOG.info("Cleaning up container " + containerIdStr);
 	//
-	//		// launch flag will be set to true if process already launched
-	//		boolean alreadyLaunched = !shouldLaunchContainer.compareAndSet(false, true);
-	//		if (!alreadyLaunched) {
-	//			LOG.info("Container " + containerIdStr + " not launched."
-	//					+ " No cleanup needed to be done");
-	//			return;
-	//		}
+	// // launch flag will be set to true if process already launched
+	// boolean alreadyLaunched = !shouldLaunchContainer.compareAndSet(false,
+	// true);
+	// if (!alreadyLaunched) {
+	// LOG.info("Container " + containerIdStr + " not launched."
+	// + " No cleanup needed to be done");
+	// return;
+	// }
 	//
-	//		LOG.debug("Marking container " + containerIdStr + " as inactive");
-	//		// this should ensure that if the container process has not launched 
-	//		// by this time, it will never be launched
-	//		exec.deactivateContainer(containerId);
+	// LOG.debug("Marking container " + containerIdStr + " as inactive");
+	// // this should ensure that if the container process has not launched
+	// // by this time, it will never be launched
+	// exec.deactivateContainer(containerId);
 	//
-	//		if (LOG.isDebugEnabled()) {
-	//			LOG.debug("Getting pid for container " + containerIdStr + " to kill"
-	//					+ " from pid file " 
-	//					+ (pidFilePath != null ? pidFilePath.toString() : "null"));
-	//		}
+	// if (LOG.isDebugEnabled()) {
+	// LOG.debug("Getting pid for container " + containerIdStr + " to kill"
+	// + " from pid file "
+	// + (pidFilePath != null ? pidFilePath.toString() : "null"));
+	// }
 	//
-	//		// however the container process may have already started
-	//		try {
+	// // however the container process may have already started
+	// try {
 	//
-	//			// get process id from pid file if available
-	//			// else if shell is still active, get it from the shell
-	//			String processId = null;
-	//			if (pidFilePath != null) {
-	//				processId = getContainerPid(pidFilePath);
-	//			}
+	// // get process id from pid file if available
+	// // else if shell is still active, get it from the shell
+	// String processId = null;
+	// if (pidFilePath != null) {
+	// processId = getContainerPid(pidFilePath);
+	// }
 	//
-	//			// kill process
-	//			if (processId != null) {
-	//				String user = container.getUser();
-	//				LOG.debug("Sending signal to pid " + processId
-	//						+ " as user " + user
-	//						+ " for container " + containerIdStr);
-	//				if (sleepDelayBeforeSigKill > 0) {
-	//					boolean result = exec.signalContainer(user,
-	//							processId, Signal.TERM);
-	//					LOG.debug("Sent signal to pid " + processId
-	//							+ " as user " + user
-	//							+ " for container " + containerIdStr
-	//							+ ", result=" + (result? "success" : "failed"));
-	//					new DelayedProcessKiller(container, user,
-	//							processId, sleepDelayBeforeSigKill, Signal.KILL, exec).start();
-	//				}
-	//			}
-	//		} catch (Exception e) {
-	//			String message =
-	//					"Exception when trying to cleanup container " + containerIdStr
-	//					+ ": " + StringUtils.stringifyException(e);
-	//			LOG.warn(message);
-	//			dispatcher.getEventHandler().handle(
-	//					new ContainerDiagnosticsUpdateEvent(containerId, message));
-	//		} finally {
-	//			// cleanup pid file if present
-	//			if (pidFilePath != null) {
-	//				FileContext lfs = FileContext.getLocalFSFileContext();
-	//				lfs.delete(pidFilePath, false);
-	//			}
-	//		}
-	//	}
-
+	// // kill process
+	// if (processId != null) {
+	// String user = container.getUser();
+	// LOG.debug("Sending signal to pid " + processId
+	// + " as user " + user
+	// + " for container " + containerIdStr);
+	// if (sleepDelayBeforeSigKill > 0) {
+	// boolean result = exec.signalContainer(user,
+	// processId, Signal.TERM);
+	// LOG.debug("Sent signal to pid " + processId
+	// + " as user " + user
+	// + " for container " + containerIdStr
+	// + ", result=" + (result? "success" : "failed"));
+	// new DelayedProcessKiller(container, user,
+	// processId, sleepDelayBeforeSigKill, Signal.KILL, exec).start();
+	// }
+	// }
+	// } catch (Exception e) {
+	// String message =
+	// "Exception when trying to cleanup container " + containerIdStr
+	// + ": " + StringUtils.stringifyException(e);
+	// LOG.warn(message);
+	// dispatcher.getEventHandler().handle(
+	// new ContainerDiagnosticsUpdateEvent(containerId, message));
+	// } finally {
+	// // cleanup pid file if present
+	// if (pidFilePath != null) {
+	// FileContext lfs = FileContext.getLocalFSFileContext();
+	// lfs.delete(pidFilePath, false);
+	// }
+	// }
+	// }
 	/**
 	 * Loop through for a time-bounded interval waiting to
 	 * read the process id from a file generated by a running process.
 	 * @param pidFilePath File from which to read the process id
 	 * @return Process ID
 	 * @throws Exception
-//	 */
-	//	private String getContainerPid(Path pidFilePath) throws Exception {
-	//		String containerIdStr = 
-	//				ConverterUtils.toString(container.getContainerId());
-	//		String processId = null;
-	//		LOG.debug("Accessing pid for container " + containerIdStr
-	//				+ " from pid file " + pidFilePath);
-	//		int sleepCounter = 0;
-	//		final int sleepInterval = 100;
+	//	 */
+	// private String getContainerPid(Path pidFilePath) throws Exception {
+	// String containerIdStr =
+	// ConverterUtils.toString(container.getContainerId());
+	// String processId = null;
+	// LOG.debug("Accessing pid for container " + containerIdStr
+	// + " from pid file " + pidFilePath);
+	// int sleepCounter = 0;
+	// final int sleepInterval = 100;
 	//
-	//		// loop waiting for pid file to show up 
-	//		// until either the completed flag is set which means something bad 
-	//		// happened or our timer expires in which case we admit defeat
-	//		while (!completed.get()) {
-	//			processId = ProcessIdFileReader.getProcessId(pidFilePath);
-	//			if (processId != null) {
-	//				LOG.debug("Got pid " + processId + " for container "
-	//						+ containerIdStr);
-	//				break;
-	//			}
-	//			else if ((sleepCounter*sleepInterval) > maxKillWaitTime) {
-	//				LOG.info("Could not get pid for " + containerIdStr
-	//						+ ". Waited for " + maxKillWaitTime + " ms.");
-	//				break;
-	//			}
-	//			else {
-	//				++sleepCounter;
-	//				Thread.sleep(sleepInterval);
-	//			}
-	//		}
-	//		return processId;
-	//	}
-
+	// // loop waiting for pid file to show up
+	// // until either the completed flag is set which means something bad
+	// // happened or our timer expires in which case we admit defeat
+	// while (!completed.get()) {
+	// processId = ProcessIdFileReader.getProcessId(pidFilePath);
+	// if (processId != null) {
+	// LOG.debug("Got pid " + processId + " for container "
+	// + containerIdStr);
+	// break;
+	// }
+	// else if ((sleepCounter*sleepInterval) > maxKillWaitTime) {
+	// LOG.info("Could not get pid for " + containerIdStr
+	// + ". Waited for " + maxKillWaitTime + " ms.");
+	// break;
+	// }
+	// else {
+	// ++sleepCounter;
+	// Thread.sleep(sleepInterval);
+	// }
+	// }
+	// return processId;
+	// }
 	public static String getRelativeContainerLogDir(String appIdStr,
 			String containerIdStr) {
 		return appIdStr + Path.SEPARATOR + containerIdStr;
 	}
 
-	//	private String getContainerPrivateDir(String appIdStr, String containerIdStr) {
-	//		return getAppPrivateDir(appIdStr) + Path.SEPARATOR + containerIdStr
-	//				+ Path.SEPARATOR;
-	//	}
+	// private String getContainerPrivateDir(String appIdStr, String
+	// containerIdStr) {
+	// return getAppPrivateDir(appIdStr) + Path.SEPARATOR + containerIdStr
+	// + Path.SEPARATOR;
+	// }
 
-	//	private String getAppPrivateDir(String appIdStr) {
-	//		return ResourceLocalizationService.NM_PRIVATE_DIR + Path.SEPARATOR
-	//				+ appIdStr;
-	//	}
+	// private String getAppPrivateDir(String appIdStr) {
+	// return ResourceLocalizationService.NM_PRIVATE_DIR + Path.SEPARATOR
+	// + appIdStr;
+	// }
 
 	private static abstract class ShellScriptBuilder {
 
-		private static final String LINE_SEPARATOR =
-				System.getProperty("line.separator");
+		private static final String LINE_SEPARATOR = System
+				.getProperty("line.separator");
 		private final StringBuilder sb = new StringBuilder();
 
 		public abstract void command(List<String> command);
@@ -419,9 +452,10 @@ public class ContainerLaunch implements Callable<Integer> {
 		protected abstract void mkdir(Path path);
 	}
 
-	private static final class UnixShellScriptBuilder extends ShellScriptBuilder {
+	private static final class UnixShellScriptBuilder extends
+			ShellScriptBuilder {
 
-		public UnixShellScriptBuilder(){
+		public UnixShellScriptBuilder() {
 			line("#!/bin/bash");
 			line();
 		}
@@ -438,7 +472,8 @@ public class ContainerLaunch implements Callable<Integer> {
 
 		@Override
 		protected void link(Path src, Path dst) throws IOException {
-			line("ln -sf \"", src.toUri().getPath(), "\" \"", dst.toString(), "\"");
+			line("ln -sf \"", src.toUri().getPath(), "\" \"", dst.toString(),
+					"\"");
 		}
 
 		@Override
@@ -447,8 +482,8 @@ public class ContainerLaunch implements Callable<Integer> {
 		}
 	}
 
-	private static final class WindowsShellScriptBuilder
-	extends ShellScriptBuilder {
+	private static final class WindowsShellScriptBuilder extends
+			ShellScriptBuilder {
 
 		public WindowsShellScriptBuilder() {
 			line("@setlocal");
@@ -471,10 +506,12 @@ public class ContainerLaunch implements Callable<Integer> {
 			File srcFile = new File(src.toUri().getPath());
 			String srcFileStr = srcFile.getPath();
 			String dstFileStr = new File(dst.toString()).getPath();
-			// If not on Java7+ on Windows, then copy file instead of symlinking.
+			// If not on Java7+ on Windows, then copy file instead of
+			// symlinking.
 			// See also FileUtil#symLink for full explanation.
 			if (!Shell.isJava7OrAbove() && srcFile.isFile()) {
-				line(String.format("@copy \"%s\" \"%s\"", srcFileStr, dstFileStr));
+				line(String.format("@copy \"%s\" \"%s\"", srcFileStr,
+						dstFileStr));
 			} else {
 				line(String.format("@%s symlink \"%s\" \"%s\"", Shell.WINUTILS,
 						dstFileStr, srcFileStr));
@@ -487,157 +524,159 @@ public class ContainerLaunch implements Callable<Integer> {
 		}
 	}
 
-	private static void putEnvIfNotNull(
-			Map<String, String> environment, String variable, String value) {
+	private static void putEnvIfNotNull(Map<String, String> environment,
+			String variable, String value) {
 		if (value != null) {
 			environment.put(variable, value);
 		}
 	}
 
-	private static void putEnvIfAbsent(
-			Map<String, String> environment, String variable) {
+	private static void putEnvIfAbsent(Map<String, String> environment,
+			String variable) {
 		if (environment.get(variable) == null) {
 			putEnvIfNotNull(environment, variable, System.getenv(variable));
 		}
 	}
 
-	//	public void sanitizeEnv(Map<String, String> environment, Path pwd,
-	//			List<Path> appDirs, List<String> containerLogDirs,
-	//			Map<Path, List<String>> resources) throws IOException {
-	//		/**
-	//		 * Non-modifiable environment variables
-	//		 */
+	// public void sanitizeEnv(Map<String, String> environment, Path pwd,
+	// List<Path> appDirs, List<String> containerLogDirs,
+	// Map<Path, List<String>> resources) throws IOException {
+	// /**
+	// * Non-modifiable environment variables
+	// */
 	//
-	//		environment.put(Environment.CONTAINER_ID.name(), container
-	//				.getContainerId().toString());
+	// environment.put(Environment.CONTAINER_ID.name(), container
+	// .getContainerId().toString());
 	//
-	//		environment.put(Environment.NM_PORT.name(),
-	//				String.valueOf(this.context.getNodeId().getPort()));
+	// environment.put(Environment.NM_PORT.name(),
+	// String.valueOf(this.context.getNodeId().getPort()));
 	//
-	//		environment.put(Environment.NM_HOST.name(), this.context.getNodeId()
-	//				.getHost());
+	// environment.put(Environment.NM_HOST.name(), this.context.getNodeId()
+	// .getHost());
 	//
-	//		environment.put(Environment.NM_HTTP_PORT.name(),
-	//				String.valueOf(this.context.getHttpPort()));
+	// environment.put(Environment.NM_HTTP_PORT.name(),
+	// String.valueOf(this.context.getHttpPort()));
 	//
-	//		environment.put(Environment.LOCAL_DIRS.name(),
-	//				StringUtils.join(",", appDirs));
+	// environment.put(Environment.LOCAL_DIRS.name(),
+	// StringUtils.join(",", appDirs));
 	//
-	//		environment.put(Environment.LOG_DIRS.name(),
-	//				StringUtils.join(",", containerLogDirs));
+	// environment.put(Environment.LOG_DIRS.name(),
+	// StringUtils.join(",", containerLogDirs));
 	//
-	//		environment.put(Environment.USER.name(), container.getUser());
+	// environment.put(Environment.USER.name(), container.getUser());
 	//
-	//		environment.put(Environment.LOGNAME.name(), container.getUser());
+	// environment.put(Environment.LOGNAME.name(), container.getUser());
 	//
-	//		environment.put(Environment.HOME.name(),
-	//				conf.get(
-	//						YarnConfiguration.NM_USER_HOME_DIR, 
-	//						YarnConfiguration.DEFAULT_NM_USER_HOME_DIR
-	//						)
-	//				);
+	// environment.put(Environment.HOME.name(),
+	// conf.get(
+	// YarnConfiguration.NM_USER_HOME_DIR,
+	// YarnConfiguration.DEFAULT_NM_USER_HOME_DIR
+	// )
+	// );
 	//
-	//		environment.put(Environment.PWD.name(), pwd.toString());
+	// environment.put(Environment.PWD.name(), pwd.toString());
 	//
-	//		putEnvIfNotNull(environment, 
-	//				Environment.HADOOP_CONF_DIR.name(), 
-	//				System.getenv(Environment.HADOOP_CONF_DIR.name())
-	//				);
+	// putEnvIfNotNull(environment,
+	// Environment.HADOOP_CONF_DIR.name(),
+	// System.getenv(Environment.HADOOP_CONF_DIR.name())
+	// );
 	//
-	//		if (!Shell.WINDOWS) {
-	//			environment.put("JVM_PID", "$$");
-	//		}
+	// if (!Shell.WINDOWS) {
+	// environment.put("JVM_PID", "$$");
+	// }
 	//
-	//		/**
-	//		 * Modifiable environment variables
-	//		 */
+	// /**
+	// * Modifiable environment variables
+	// */
 	//
-	//		// allow containers to override these variables
-	//		String[] whitelist = conf.get(YarnConfiguration.NM_ENV_WHITELIST, YarnConfiguration.DEFAULT_NM_ENV_WHITELIST).split(",");
+	// // allow containers to override these variables
+	// String[] whitelist = conf.get(YarnConfiguration.NM_ENV_WHITELIST,
+	// YarnConfiguration.DEFAULT_NM_ENV_WHITELIST).split(",");
 	//
-	//		for(String whitelistEnvVariable : whitelist) {
-	//			putEnvIfAbsent(environment, whitelistEnvVariable.trim());
-	//		}
+	// for(String whitelistEnvVariable : whitelist) {
+	// putEnvIfAbsent(environment, whitelistEnvVariable.trim());
+	// }
 	//
-	//		// variables here will be forced in, even if the container has specified them.
-	//		Apps.setEnvFromInputString(
-	//				environment,
-	//				conf.get(
-	//						YarnConfiguration.NM_ADMIN_USER_ENV,
-	//						YarnConfiguration.DEFAULT_NM_ADMIN_USER_ENV)
-	//				);
+	// // variables here will be forced in, even if the container has specified
+	// them.
+	// Apps.setEnvFromInputString(
+	// environment,
+	// conf.get(
+	// YarnConfiguration.NM_ADMIN_USER_ENV,
+	// YarnConfiguration.DEFAULT_NM_ADMIN_USER_ENV)
+	// );
 	//
-	//		// TODO: Remove Windows check and use this approach on all platforms after
-	//		// additional testing.  See YARN-358.
-	//		if (Shell.WINDOWS) {
-	//			String inputClassPath = environment.get(Environment.CLASSPATH.name());
-	//			if (inputClassPath != null && !inputClassPath.isEmpty()) {
-	//				StringBuilder newClassPath = new StringBuilder(inputClassPath);
+	// // TODO: Remove Windows check and use this approach on all platforms
+	// after
+	// // additional testing. See YARN-358.
+	// if (Shell.WINDOWS) {
+	// String inputClassPath = environment.get(Environment.CLASSPATH.name());
+	// if (inputClassPath != null && !inputClassPath.isEmpty()) {
+	// StringBuilder newClassPath = new StringBuilder(inputClassPath);
 	//
-	//				// Localized resources do not exist at the desired paths yet, because the
-	//				// container launch script has not run to create symlinks yet.  This
-	//				// means that FileUtil.createJarWithClassPath can't automatically expand
-	//				// wildcards to separate classpath entries for each file in the manifest.
-	//				// To resolve this, append classpath entries explicitly for each
-	//				// resource.
-	//				for (Map.Entry<Path,List<String>> entry : resources.entrySet()) {
-	//					boolean targetIsDirectory = new File(entry.getKey().toUri().getPath())
-	//					.isDirectory();
+	// // Localized resources do not exist at the desired paths yet, because the
+	// // container launch script has not run to create symlinks yet. This
+	// // means that FileUtil.createJarWithClassPath can't automatically expand
+	// // wildcards to separate classpath entries for each file in the manifest.
+	// // To resolve this, append classpath entries explicitly for each
+	// // resource.
+	// for (Map.Entry<Path,List<String>> entry : resources.entrySet()) {
+	// boolean targetIsDirectory = new File(entry.getKey().toUri().getPath())
+	// .isDirectory();
 	//
-	//					for (String linkName : entry.getValue()) {
-	//						// Append resource.
-	//						newClassPath.append(File.pathSeparator).append(pwd.toString())
-	//						.append(Path.SEPARATOR).append(linkName);
+	// for (String linkName : entry.getValue()) {
+	// // Append resource.
+	// newClassPath.append(File.pathSeparator).append(pwd.toString())
+	// .append(Path.SEPARATOR).append(linkName);
 	//
-	//						// FileUtil.createJarWithClassPath must use File.toURI to convert
-	//						// each file to a URI to write into the manifest's classpath.  For
-	//						// directories, the classpath must have a trailing '/', but
-	//						// File.toURI only appends the trailing '/' if it is a directory that
-	//						// already exists.  To resolve this, add the classpath entries with
-	//						// explicit trailing '/' here for any localized resource that targets
-	//						// a directory.  Then, FileUtil.createJarWithClassPath will guarantee
-	//						// that the resulting entry in the manifest's classpath will have a
-	//						// trailing '/', and thus refer to a directory instead of a file.
-	//						if (targetIsDirectory) {
-	//							newClassPath.append(Path.SEPARATOR);
-	//						}
-	//					}
-	//				}
+	// // FileUtil.createJarWithClassPath must use File.toURI to convert
+	// // each file to a URI to write into the manifest's classpath. For
+	// // directories, the classpath must have a trailing '/', but
+	// // File.toURI only appends the trailing '/' if it is a directory that
+	// // already exists. To resolve this, add the classpath entries with
+	// // explicit trailing '/' here for any localized resource that targets
+	// // a directory. Then, FileUtil.createJarWithClassPath will guarantee
+	// // that the resulting entry in the manifest's classpath will have a
+	// // trailing '/', and thus refer to a directory instead of a file.
+	// if (targetIsDirectory) {
+	// newClassPath.append(Path.SEPARATOR);
+	// }
+	// }
+	// }
 	//
-	//				// When the container launches, it takes the parent process's environment
-	//				// and then adds/overwrites with the entries from the container launch
-	//				// context.  Do the same thing here for correct substitution of
-	//				// environment variables in the classpath jar manifest.
-	//				Map<String, String> mergedEnv = new HashMap<String, String>(
-	//						System.getenv());
-	//				mergedEnv.putAll(environment);
+	// // When the container launches, it takes the parent process's environment
+	// // and then adds/overwrites with the entries from the container launch
+	// // context. Do the same thing here for correct substitution of
+	// // environment variables in the classpath jar manifest.
+	// Map<String, String> mergedEnv = new HashMap<String, String>(
+	// System.getenv());
+	// mergedEnv.putAll(environment);
 	//
-	//				String classPathJar = FileUtil.createJarWithClassPath(
-	//						newClassPath.toString(), pwd, mergedEnv);
-	//				environment.put(Environment.CLASSPATH.name(), classPathJar);
-	//			}
-	//		}
-	//		// put AuxiliaryService data to environment
-	//		for (Map.Entry<String, ByteBuffer> meta : containerManager
-	//				.getAuxServiceMetaData().entrySet()) {
-	//			AuxiliaryServiceHelper.setServiceDataIntoEnv(
-	//					meta.getKey(), meta.getValue(), environment);
-	//		}
-	//	}
+	// String classPathJar = FileUtil.createJarWithClassPath(
+	// newClassPath.toString(), pwd, mergedEnv);
+	// environment.put(Environment.CLASSPATH.name(), classPathJar);
+	// }
+	// }
+	// // put AuxiliaryService data to environment
+	// for (Map.Entry<String, ByteBuffer> meta : containerManager
+	// .getAuxServiceMetaData().entrySet()) {
+	// AuxiliaryServiceHelper.setServiceDataIntoEnv(
+	// meta.getKey(), meta.getValue(), environment);
+	// }
+	// }
 
 	static void writeLaunchEnv(OutputStream out,
-			Map<String,String> environment, Map<Path,List<String>> resources,
-			List<String> command)
-					throws IOException {
-		ShellScriptBuilder sb = Shell.WINDOWS ? new WindowsShellScriptBuilder() :
-			new UnixShellScriptBuilder();
+			Map<String, String> environment, Map<Path, List<String>> resources,
+			List<String> command) throws IOException {
+		ShellScriptBuilder sb = Shell.WINDOWS ? new WindowsShellScriptBuilder()
+				: new UnixShellScriptBuilder();
 		if (environment != null) {
-			for (Map.Entry<String,String> env : environment.entrySet()) {
+			for (Map.Entry<String, String> env : environment.entrySet()) {
 				sb.env(env.getKey().toString(), env.getValue().toString());
 			}
 		}
 		if (resources != null) {
-			for (Map.Entry<Path,List<String>> entry : resources.entrySet()) {
+			for (Map.Entry<Path, List<String>> entry : resources.entrySet()) {
 				for (String linkName : entry.getValue()) {
 					sb.symlink(entry.getKey(), new Path(linkName));
 				}

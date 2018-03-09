@@ -212,73 +212,10 @@ public class RMAppImpl implements RMApp, Recoverable {
 
 	private final StateMachine<RMAppState, RMAppEventType, RMAppEvent> stateMachine;
 
-	// private static final ApplicationResourceUsageReport
-	// DUMMY_APPLICATION_RESOURCE_USAGE_REPORT =
-	// BuilderUtils.newApplicationResourceUsageReport(-1, -1,
-	// Resources.createResource(-1, -1), Resources.createResource(-1, -1),
-	// Resources.createResource(-1, -1));
-	// private static final int DUMMY_APPLICATION_ATTEMPT_NUMBER = -1;
-	//
-	// /**
-	// * test
-	// * @param applicationId
-	// * @param rmContext
-	// * @param name
-	// * @param user
-	// * @param queue
-	// * @param submissionContext
-	// * @param submitTime
-	// */
-	// public RMAppImpl(ApplicationId applicationId, RMContext rmContext,
-	// // Configuration config,
-	// String name, String user, String queue,
-	// ApplicationSubmissionContext submissionContext,
-	// // YarnScheduler scheduler,
-	// // ApplicationMasterService masterService,
-	// long submitTime) {//, String applicationType
-	//
-	// this.applicationId = applicationId;
-	// this.name = name;
-	// this.rmContext = rmContext;
-	// this.dispatcher = null;
-	// this.handler = null;
-	// // this.conf = config;
-	// this.user = user;
-	// this.queue = queue;
-	// this.submissionContext = submissionContext;
-	// // this.scheduler = scheduler;
-	// // this.masterService = masterService;
-	// this.submitTime = submitTime;
-	// this.startTime = System.currentTimeMillis();
-	// // this.applicationType = applicationType;
-	// //
-	// // int globalMaxAppAttempts =
-	// conf.getInt(YarnConfiguration.RM_AM_MAX_ATTEMPTS,
-	// // YarnConfiguration.DEFAULT_RM_AM_MAX_ATTEMPTS);
-	// // int individualMaxAppAttempts = submissionContext.getMaxAppAttempts();
-	// // if (individualMaxAppAttempts <= 0 ||
-	// // individualMaxAppAttempts > globalMaxAppAttempts) {
-	// // this.maxAppAttempts = globalMaxAppAttempts;
-	// // LOG.warn("The specific max attempts: " + individualMaxAppAttempts
-	// // + " for application: " + applicationId.getId()
-	// // + " is invalid, because it is out of the range [1, "
-	// // + globalMaxAppAttempts + "]. Use the global max attempts instead.");
-	// // } else {
-	// // this.maxAppAttempts = individualMaxAppAttempts;
-	// // }
-	//
-	// ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-	// this.readLock = lock.readLock();
-	// this.writeLock = lock.writeLock();
-	//
-	// this.stateMachine = stateMachineFactory.make(this);
-	// }
+	
 	public RMAppImpl(ApplicationId applicationId, RMContext rmContext,
-			// Configuration config,
 			String name, String user, String queue,
 			ApplicationSubmissionContext submissionContext,
-			// Scheduler scheduler,
-			// ApplicationMasterService masterService,
 			long submitTime) {// , String applicationType
 
 		this.applicationId = applicationId;
@@ -286,31 +223,11 @@ public class RMAppImpl implements RMApp, Recoverable {
 		this.rmContext = rmContext;
 		this.dispatcher = rmContext.getDispatcher();
 		this.handler = dispatcher.getEventHandler();
-		// this.conf = config;
 		this.user = user;
 		this.queue = queue;
 		this.submissionContext = submissionContext;
-		// this.scheduler = scheduler;
-		// this.masterService = masterService;
 		this.submitTime = submitTime;
 		this.startTime = System.currentTimeMillis();
-		// this.applicationType = applicationType;
-		//
-		// int globalMaxAppAttempts =
-		// conf.getInt(YarnConfiguration.RM_AM_MAX_ATTEMPTS,
-		// YarnConfiguration.DEFAULT_RM_AM_MAX_ATTEMPTS);
-		// int individualMaxAppAttempts = submissionContext.getMaxAppAttempts();
-		// if (individualMaxAppAttempts <= 0 ||
-		// individualMaxAppAttempts > globalMaxAppAttempts) {
-		// this.maxAppAttempts = globalMaxAppAttempts;
-		// LOG.warn("The specific max attempts: " + individualMaxAppAttempts
-		// + " for application: " + applicationId.getId()
-		// + " is invalid, because it is out of the range [1, "
-		// + globalMaxAppAttempts + "]. Use the global max attempts instead.");
-		// } else {
-		// this.maxAppAttempts = individualMaxAppAttempts;
-		// }
-
 		ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 		this.readLock = lock.readLock();
 		this.writeLock = lock.writeLock();

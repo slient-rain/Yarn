@@ -59,13 +59,9 @@ public class AppSchedulingInfo {
 	boolean pending = true; // for app metrics
 
 	public AppSchedulingInfo(ApplicationAttemptId appAttemptId) 
-	{//String user, Queue queue, ActiveUsersManager activeUsersManager
+	{
 		this.applicationAttemptId = appAttemptId;
 		this.applicationId = appAttemptId.getApplicationId();
-		//		this.queue = queue;
-		//		this.queueName = queue.getQueueName();
-		//		this.user = user;
-		//		this.activeUsersManager = activeUsersManager;
 	}
 
 	/**

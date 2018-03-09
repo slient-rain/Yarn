@@ -3,7 +3,7 @@
 <configuration debug="false" scan="true" scanPeriod="30 seconds">
 
 	<!-- 定义常量 ，下面可以引用 -->
-	<property name="LOG_HOME" value="LOG" /><!-- log目录 -->
+	<property name="LOG_HOME" value="/tmp/log/yarn" /><!-- log目录 -->
 	<property name="BACKUP_HOME" value="${LOG_HOME}/backup" /><!--日志备份目录 -->
 
 	<!-- 定义控制台输出 -->

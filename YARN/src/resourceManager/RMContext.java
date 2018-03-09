@@ -48,30 +48,8 @@ public interface RMContext {
   Scheduler getScheduler();
   void setScheduler(Scheduler scheduler);
   ConcurrentMap<ApplicationAttemptId, AppMaster> getAppMasters();
-
-//  ApplicationMasterLauncher getApplicationMasterLauncher();
-//  AMLivelinessMonitor getAMLivelinessMonitor();
-//
-//  AMLivelinessMonitor getAMFinishingMonitor();
-//
-//  ContainerAllocationExpirer getContainerAllocationExpirer();
-//  
-//  DelegationTokenRenewer getDelegationTokenRenewer();
-//
-//  AMRMTokenSecretManager getAMRMTokenSecretManager();
-//
-//  RMContainerTokenSecretManager getContainerTokenSecretManager();
-//  
-//  NMTokenSecretManagerInRM getNMTokenSecretManager();
-//
-//  ClientToAMTokenSecretManagerInRM getClientToAMTokenSecretManager();
   
   void setClientRMService(ClientRMService clientRMService);
   
   ClientRMService getClientRMService();
-  
-//  RMDelegationTokenSecretManager getRMDelegationTokenSecretManager();
-//
-//  void setRMDelegationTokenSecretManager(
-//      RMDelegationTokenSecretManager delegationTokenSecretManager);
 }

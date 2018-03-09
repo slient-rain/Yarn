@@ -36,6 +36,13 @@ import java.io.Serializable;
 
 public class ResourceRequest implements Comparable<ResourceRequest> {
 
+	@Override
+	public String toString() {
+		return "ResourceRequest [priority=" + priority + ", hostName="
+				+ hostName + ", capability=" + capability + ", numContainers="
+				+ numContainers + ", relaxLocality=" + relaxLocality + "]";
+	}
+
 	Priority priority;
 	String hostName;
 	Resource capability;

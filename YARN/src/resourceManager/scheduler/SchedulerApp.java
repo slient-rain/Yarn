@@ -24,6 +24,15 @@ import com.sun.org.apache.bcel.internal.generic.NEW;
 
 public class SchedulerApp {
 
+	@Override
+	public String toString() {
+		return "SchedulerApp [appSchedulingInfo=" + appSchedulingInfo
+				+ ", currentConsumption=" + currentConsumption
+				+ ", resourceLimit=" + resourceLimit + ", liveContainers="
+				+ liveContainers + ", newlyAllocatedContainers="
+				+ newlyAllocatedContainers + ", isStopped=" + isStopped + "]";
+	}
+
 	private static final Logger LOG = LoggerFactory.getLogger(SchedulerApp.class);
 	private final AppSchedulingInfo appSchedulingInfo;
 	/**
@@ -39,11 +48,9 @@ public class SchedulerApp {
 	private boolean isStopped = false;
 
 	public SchedulerApp(ApplicationAttemptId applicationAttemptId
-			) {//String user, Queue queue, ActiveUsersManager activeUsersManager,RMContext rmContext
-		//this.rmContext = rmContext;
+			) {
 		this.appSchedulingInfo = 
-				new AppSchedulingInfo(applicationAttemptId);//, user, queue,  activeUsersManager
-		//this.queue = queue;
+				new AppSchedulingInfo(applicationAttemptId);
 	}
 
 	public synchronized void updateResourceRequests(
@@ -86,7 +93,7 @@ public class SchedulerApp {
 				new RMContainerEvent(container.getId(), RMContainerEventType.START));
 
 		if (LOG.isDebugEnabled()) {
-			LOG.debug("allocate: applicationAttemptId=" 
+			LOG.debug("assign: allocate: applicationAttemptId=" 
 					+ container.getId().getApplicationAttemptId() 
 					+ " container=" + container.getId() + " host="
 					+ container.getNodeId().getHost() + " type=" + type);
@@ -245,7 +252,7 @@ public class SchedulerApp {
 							" currentConsumption=" + currentConsumption.getMemory());
 					for (ResourceRequest request : requests.values()) {
 						LOG.debug("showRequests:" + " application=" + getApplicationId()
-								+ " request=" + request);
+								+ " request=" + request.toString());
 					}
 				}
 			}

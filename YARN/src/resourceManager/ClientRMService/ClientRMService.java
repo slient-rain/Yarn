@@ -144,8 +144,8 @@ public class ClientRMService extends AbstractService implements
 
 	InetSocketAddress getBindAddress() {
 		PropertiesFile pf = new PropertiesFile("config.properties");
-		return new InetSocketAddress(pf.get("host"), Integer.parseInt(pf
-				.get("port")));
+		return new InetSocketAddress("localhost", Integer.parseInt(pf
+				.get("clientserviceport")));
 	}
 
 	@Override

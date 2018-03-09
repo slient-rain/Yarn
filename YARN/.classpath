@@ -14,6 +14,5 @@
 	<classpathentry kind="lib" path="/Users/zhenglijiu/project/jar_package/logback-1.2.3/logback-core-1.2.3.jar"/>
 	<classpathentry kind="lib" path="/Users/zhenglijiu/project/jar_package/protocolbuf/protobuf-java-2.5.0.jar"/>
 	<classpathentry kind="lib" path="/Users/zhenglijiu/project/jar_package/slf4j-1.7.25/slf4j-api-1.7.25.jar"/>
-	<classpathentry kind="lib" path="/Users/zhenglijiu/project/jar_package/self write jar/service.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

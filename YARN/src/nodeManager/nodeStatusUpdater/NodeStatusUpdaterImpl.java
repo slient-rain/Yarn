@@ -4,9 +4,13 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import nodeManager.Context;
+import nodeManager.container.Container;
+import nodeManager.container.ContainerImpl;
+import nodeManager.container.ContainerState;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,11 +21,8 @@ import protocol.protocolWritable.NodeHeartbeatRequest;
 import protocol.protocolWritable.NodeHeartbeatResponse;
 import protocol.protocolWritable.RegisterNodeManagerRequest;
 import protocol.protocolWritable.RegisterNodeManagerResponse;
-
 import dispatcher.core.Dispatcher;
-
 import resourceManager.scheduler.ApplicationId;
-import resourceManager.scheduler.Container;
 import resourceManager.scheduler.ContainerId;
 import resourceManager.scheduler.ContainerStatus;
 import resourceManager.scheduler.NodeId;
@@ -38,7 +39,7 @@ public class NodeStatusUpdaterImpl extends AbstractService implements
 	// lock
 	private final Object heartbeatMonitor = new Object();
 
-	private final Context context;
+	private Context context;
 	private final Dispatcher dispatcher;
 
 	private NodeId nodeId;
@@ -123,14 +124,50 @@ public class NodeStatusUpdaterImpl extends AbstractService implements
 					try {
 
 						NodeHeartbeatRequest request = new NodeHeartbeatRequest();
-						request.setContainers(new ArrayList<ContainerStatus>());
+						List<ContainerStatus> containers = new ArrayList<ContainerStatus>();
+						for (Map.Entry<ContainerId, Container> container : context
+								.getContainers().entrySet()) {
+							ContainerState state = container.getValue()
+									.getContainerState();
+							if (state == ContainerState.NEW) {
+								containers
+										.add(new ContainerStatus(
+												container.getKey(),
+												resourceManager.scheduler.ContainerState.NEW,
+												0, "new"));
+							} else if (state == ContainerState.RUNNING) {
+								containers
+										.add(new ContainerStatus(
+												container.getKey(),
+												resourceManager.scheduler.ContainerState.RUNNING,
+												0, "running"));
+							} else if (state == ContainerState.EXITED_WITH_SUCCESS) {
+								containers
+										.add(new ContainerStatus(
+												container.getKey(),
+												resourceManager.scheduler.ContainerState.COMPLETE,
+												0, "complete"));
+							}
+						}
+						
+						request.setContainers(containers);
+						for(int i=0; i<request.getContainers().size();i++){
+							LOG.debug("containerstatus "+i+" "+request.getContainers().get(i));
+						}
 						request.setKeepAliveApplications(new ArrayList<ApplicationId>());
 						request.setNodeId(nodeId);
 						NodeHeartbeatResponse response = resourceTracker
 								.nodeHeartbeat(request);
 						LOG.debug("util check: nodeHeartbeat response :"
-										+ response.toString());
-
+								+ response.toString());
+						//资源清理工作只是简单的讲容器和应用从列表中删除
+						List<ContainerId> containerToClean=response.getContainersToCleanup();
+						for(int i=0; i<containerToClean.size();i++){
+							ContainerId containerid=containerToClean.get(i);
+							ApplicationId appid=containerid.getApplicationAttemptId().getApplicationId();
+							context.getContainers().remove(containerid);
+							context.getApplications().remove(appid);
+						}
 						// get next heartbeat interval from response
 						nextHeartBeatInterval = response
 								.getNextHeartBeatInterval();
@@ -192,7 +229,7 @@ public class NodeStatusUpdaterImpl extends AbstractService implements
 
 	private static InetSocketAddress getRmAddress() {
 		PropertiesFile pf = new PropertiesFile("config.properties");
-		return new InetSocketAddress(pf.get("host"), Integer.parseInt(pf
+		return new InetSocketAddress(pf.get("resourcemanagerhost"), Integer.parseInt(pf
 				.get("ResourceTrackerServicePort")));
 	}
 

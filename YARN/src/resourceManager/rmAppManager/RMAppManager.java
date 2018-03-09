@@ -29,36 +29,10 @@ public class RMAppManager // implements
 	private static final Logger LOG = LoggerFactory
 			.getLogger(RMAppManager.class);
 
-	// private int completedAppsMax =
-	// YarnConfiguration.DEFAULT_RM_MAX_COMPLETED_APPLICATIONS;
-	// private int globalMaxAppAttempts;
-	// private LinkedList<ApplicationId> completedApps = new
-	// LinkedList<ApplicationId>();
-
 	private final RMContext rmContext;
-
-	// private final ApplicationMasterService masterService;
-	// private final YarnScheduler scheduler;
-	// private final ApplicationACLsManager applicationACLsManager;
-	// private Configuration conf;
-
 	public RMAppManager(RMContext context
-	// YarnScheduler scheduler,
-	// ApplicationMasterService masterService,
-	// ApplicationACLsManager applicationACLsManager,
-	// Configuration conf
 	) {
 		this.rmContext = context;
-		// this.scheduler = scheduler;
-		// this.masterService = masterService;
-		// this.applicationACLsManager = applicationACLsManager;
-		// this.conf = conf;
-		// setCompletedAppsMax(conf.getInt(
-		// YarnConfiguration.RM_MAX_COMPLETED_APPLICATIONS,
-		// YarnConfiguration.DEFAULT_RM_MAX_COMPLETED_APPLICATIONS));
-		// globalMaxAppAttempts =
-		// conf.getInt(YarnConfiguration.RM_AM_MAX_ATTEMPTS,
-		// YarnConfiguration.DEFAULT_RM_AM_MAX_ATTEMPTS);
 	}
 
 	
@@ -70,13 +44,9 @@ public class RMAppManager // implements
 		ApplicationId applicationId = submissionContext.getApplicationId();
 		// Create RMApp
 		RMApp application = new RMAppImpl(applicationId, rmContext,
-		// this.conf,
 				submissionContext.getApplicationName(), user,
 				submissionContext.getQueue(), submissionContext,
-				// this.scheduler,
-				// this.masterService,
 				submitTime
-		// submissionContext.getApplicationType()
 		);
 
 		if (rmContext.getRMApps().putIfAbsent(applicationId, application) != null) {

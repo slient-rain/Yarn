@@ -360,15 +360,15 @@ public class ContainerImpl implements Container {
 	// }
 	// }
 	//
-	// @Override
-	// public ContainerState getContainerState() {
-	// this.readLock.lock();
-	// try {
-	// return stateMachine.getCurrentState();
-	// } finally {
-	// this.readLock.unlock();
-	// }
-	// }
+	 @Override
+	 public ContainerState getContainerState() {
+	 this.readLock.lock();
+	 try {
+	 return stateMachine.getCurrentState();
+	 } finally {
+	 this.readLock.unlock();
+	 }
+	 }
 	//
 	// @Override
 	// public ContainerLaunchContext getLaunchContext() {

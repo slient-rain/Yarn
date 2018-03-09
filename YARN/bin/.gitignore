@@ -1,5 +1,7 @@
 /client/
+/service/
+/util/
+/nodeManager/
 /logxml/
 /resourceManager/
-/recoverable/
-/nodeManager/
+/protocol/

@@ -28,8 +28,8 @@ import resourceManager.scheduler.Priority;
 import resourceManager.scheduler.Resource;
 import resourceManager.scheduler.Scheduler;
 
-public class Main {
-	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
+public class ClientMain {
+	private static final Logger LOG = LoggerFactory.getLogger(ClientMain.class);
 	public static void main(String[] args) {
 		Client client = new Client();
 		client.yarnClient.init();
@@ -37,12 +37,15 @@ public class Main {
 		YarnClientApplication application=client.yarnClient.createApplication();
 		ApplicationSubmissionContext submissionContext=application.getApplicationSubmissionContext();
 		submissionContext.setApplicationName("测试应用");
-		submissionContext.setCommand(Arrays.asList("java -jar","task0.jar"));
+//		submissionContext.setCommand(Arrays.asList("/bin/bash","docker_launch0.sh"));
+		submissionContext.setCommand(Arrays.asList("java -jar ","task0.jar"));
 		String applicationId=application.getNewApplicationResponse().getApplicationId().toString();
 		Map<String,ApplicationSubmissionContext.LocalResource> map=new HashMap<String, ApplicationSubmissionContext.LocalResource>();
 		for(int i=0; i<1; i++){
+//			String file="docker_launch"+i+".sh";
 			String file="task"+i+".jar";
-			URL resource=submissionContext.new URL("192.168.2.134",8080,"AppStore/Download?applicationId="+applicationId+"&file="+file);
+			//URL resource=submissionContext.new URL("192.168.2.134",8080,"AppStore/Download?applicationId="+applicationId+"&file="+file);
+			URL resource=submissionContext.new URL("192.168.43.224",8080,"AppStore/Download?applicationId="+applicationId+"&file="+file);
 			LocalResource localResouce =submissionContext.new LocalResource();
 			localResouce.setResource(resource);
 			localResouce.setSize(500);
@@ -55,8 +58,7 @@ public class Main {
 		submissionContext.setQueue("queue 1");
 		submissionContext.setResource(new Resource(1, 1));
 		submissionContext.setUser("root");
-		client.yarnClient.submitApplication(submissionContext);
-		  
+		client.yarnClient.submitApplication(submissionContext);  
 	}
 	
 	

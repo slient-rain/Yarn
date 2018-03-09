@@ -11,11 +11,13 @@ import util.PropertiesFile;
 import dispatcher.core.AsyncDispatcher;
 import dispatcher.core.Dispatcher;
 
-public class Mian {
+public class NodemanagerMian {
 	public static void main(String[] args) {
 		ContextImpl context = new ContextImpl();
+		
 		PropertiesFile pf = new PropertiesFile("config.properties");
-		context.setNodeId(new NodeId("localhost", Integer.parseInt(pf
+		context.setNodeId(new NodeId(pf
+				.get("nodemanagerhost"), Integer.parseInt(pf
 				.get("ContainerManagerPort"))));
 
 		Dispatcher dispatcher = new AsyncDispatcher();

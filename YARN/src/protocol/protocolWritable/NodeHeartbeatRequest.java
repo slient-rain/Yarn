@@ -24,6 +24,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import client.test.ClientMain;
 import resourceManager.scheduler.ApplicationId;
 import resourceManager.scheduler.ContainerStatus;
 import resourceManager.scheduler.NodeId;
@@ -33,6 +37,7 @@ import rpc.io.Writable;
 
 
 public class NodeHeartbeatRequest implements Writable {
+	private static final Logger LOG = LoggerFactory.getLogger(ClientMain.class);
 
 	private NodeId nodeId = null;
 	private List<ContainerStatus> containers = null;//ContainerStatus
@@ -92,6 +97,7 @@ public class NodeHeartbeatRequest implements Writable {
 	public void readFields(DataInput in) throws IOException {
 		nodeId.readFields(in);
 		int n=in.readInt();
+		LOG.debug("NodeHeartbeatRequest read container status , size: "+n);
 		containers.clear();
 		for(int i=0; i<n ;i++){
 			ContainerStatus temp=new ContainerStatus();

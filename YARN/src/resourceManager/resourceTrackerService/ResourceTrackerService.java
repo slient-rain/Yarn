@@ -147,7 +147,7 @@ public class ResourceTrackerService extends AbstractService implements
 
 	InetSocketAddress getBindAddress() {
 		PropertiesFile pf = new PropertiesFile("config.properties");
-		return new InetSocketAddress(pf.get("host"), Integer.parseInt(pf
+		return new InetSocketAddress("localhost", Integer.parseInt(pf
 				.get("ResourceTrackerServicePort")));
 	}
 

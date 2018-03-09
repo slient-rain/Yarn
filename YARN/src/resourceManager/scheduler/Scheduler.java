@@ -59,12 +59,10 @@ public class Scheduler implements ResourceScheduler {
 		normalizeRequests(ask, resourceCalculator, clusterResource,
 				minimumAllocation, maximumAllocation);
 
-		// Release containers
+		// Release containers(并未使用)
 		for (ContainerId releasedContainer : release) {
 			RMContainer rmContainer = getRMContainer(releasedContainer);
 			if (rmContainer == null) {
-				// RMAuditLogger.logFailure(application.getUser(),
-				// AuditConstants.RELEASE_CONTAINER,
 				LOG.warn(
 						"Unauthorized access or invalid container",
 						"FifoScheduler",
@@ -72,10 +70,6 @@ public class Scheduler implements ResourceScheduler {
 						application.getApplicationId(), releasedContainer);
 			}
 			containerCompleted(rmContainer, null, null);
-			// SchedulerUtils.createAbnormalContainerStatus(
-			// releasedContainer,
-			// SchedulerUtils.RELEASED_CONTAINER),
-			// RMContainerEventType.RELEASED
 		}
 
 		synchronized (application) {
@@ -95,20 +89,19 @@ public class Scheduler implements ResourceScheduler {
 
 				// Update application requests
 				application.updateResourceRequests(ask);
-				LOG.debug("util check: 当前请求量："
-						+ (application.getResourceRequest(new Priority(1),
-								ResourceRequest.ANY).getCapability().toString()));
 				LOG.debug("allocate: post-update" + " applicationId="
 						+ applicationAttemptId + " application=" + application);
 				application.showRequests();
 
 				LOG.debug("allocate:" + " applicationId="
-						+ applicationAttemptId + " #ask=" + ask.size());
+						+ applicationAttemptId + " #ask.size=" + ask.size());
 			}
 
 			// application.updateBlacklist(blacklistAdditions,
 			// blacklistRemovals);
-
+			
+			LOG.debug("allocate:" + " applicationId="
+					+ applicationAttemptId + " #application=" + application);
 			return new Allocation(application.pullNewlyAllocatedContainers(),
 					application.getHeadroom());
 		}
@@ -172,8 +165,8 @@ public class Scheduler implements ResourceScheduler {
 		SchedulerApp schedulerApp = new SchedulerApp(appAttemptId);
 		// applications is a ordered map
 		applications.put(appAttemptId, schedulerApp);
-		LOG.info("Application Submission: " + appAttemptId.getApplicationId()
-				+ " from " + user + ", currently active: "
+		LOG.info("addApplication : Application Submission: " + appAttemptId.getApplicationId()
+				+ " from " + user +", currently active: "
 				+ applications.size());
 	}
 
@@ -261,9 +254,25 @@ public class Scheduler implements ResourceScheduler {
 	}
 
 	private synchronized void addNode(RMNode nodeManager) {
+		LOG.debug("addNode: pre-add" + " nodeId=" + nodeManager.getNodeID()
+				+ " node=" + nodeManager+" clusterResource"+clusterResource);
+		showClusterNodes();
 		this.nodes.put(nodeManager.getNodeID(), new SchedulerNode(nodeManager,
 				usePortForNodeName));
+		LOG.debug("addNode: post-add" + " nodeId=" + nodeManager.getNodeID()
+				+ " node=" + nodeManager+" clusterResource"+clusterResource);
+		showClusterNodes();
 		addTo(clusterResource, nodeManager.getTotalCapability());
+		
+	}
+
+	void showClusterNodes() {
+		if (LOG.isDebugEnabled()) {
+			for (Map.Entry<NodeId, SchedulerNode> node : this.nodes.entrySet()) {
+				LOG.debug("showClusterNodes:" + " nodeId="
+						+ node.getKey() + " node=" + node.getValue().toString());
+			}
+		}
 	}
 
 	private synchronized void removeNode(RMNode nodeInfo) {
@@ -368,7 +377,7 @@ public class Scheduler implements ResourceScheduler {
 	private void assignContainers(SchedulerNode node) {
 
 		LOG.debug("assignContainers:" + " node="
-				+ node.getRMNode().getNodeAddress() + " #applications="
+				+ node.getRMNode().getNodeAddress() + " #applications.size="
 				+ applications.size());
 
 		// Try to assign containers to applications in fifo order
